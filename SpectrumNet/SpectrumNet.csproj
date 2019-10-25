@@ -49,5 +49,15 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\libraries\EightBitNet\EightBit\EightBit.csproj">
+      <Project>{6ebf8857-62a3-4ef4-af21-c1844031d7e4}</Project>
+      <Name>EightBit</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\libraries\EightBitNet\Z80\Z80.csproj">
+      <Project>{c00648c1-bac1-4efb-816f-e87c091619d7}</Project>
+      <Name>Z80</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

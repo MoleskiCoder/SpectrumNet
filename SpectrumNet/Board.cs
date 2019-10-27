@@ -1,6 +1,5 @@
 ﻿namespace SpectrumNet
 {
-    using System;
     using System.Collections.Generic;
 
     public sealed class Board  : EightBit.Bus

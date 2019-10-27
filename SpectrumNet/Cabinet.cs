@@ -14,7 +14,6 @@
         private const int DisplayWidth = Ula.RasterWidth;
         private const int DisplayHeight = Ula.RasterHeight;
 
-        private readonly Configuration configuration;
         private readonly ColourPalette palette = new ColourPalette();
 
         private readonly List<Keys> pressed = new List<Keys>();
@@ -27,7 +26,7 @@
 
         public Cabinet(Configuration configuration)
         {
-            this.configuration = configuration;
+            this.Settings = configuration;
             this.Motherboard = new Board(this.palette, configuration);
 
             this.graphics = new GraphicsDeviceManager(this)
@@ -36,12 +35,24 @@
             };
         }
 
+        public event EventHandler<EventArgs> Initializing;
+
+        public event EventHandler<EventArgs> Initialized;
+
         public Board Motherboard { get; }
+
+        public Configuration Settings { get; }
 
         public void Plug(string path) => this.Motherboard.Plug(path);
 
+        protected void OnInitializing() => this.Initializing?.Invoke(this, EventArgs.Empty);
+
+        protected void OnInitialized() => this.Initialized?.Invoke(this, EventArgs.Empty);
+
         protected override void Initialize()
         {
+            this.OnInitializing();
+
             base.Initialize();
 
             this.spriteBatch = new SpriteBatch(this.GraphicsDevice);
@@ -51,6 +62,8 @@
 
             this.Motherboard.Initialize();
             this.Motherboard.RaisePOWER();
+
+            this.OnInitialized();
         }
 
         protected override void Update(GameTime gameTime)

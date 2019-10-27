@@ -79,7 +79,6 @@
     <Compile Include="Buzzer.cs" />
     <Compile Include="Cabinet.cs" />
     <Compile Include="ColourPalette.cs" />
-    <Compile Include="Computer.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="Expansion.cs" />
     <Compile Include="Interface2Joystick.cs" />
@@ -89,6 +88,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SnaFile.cs" />
     <Compile Include="SnapshotFile.cs" />
+    <Compile Include="SteppingEventArgs.cs" />
     <Compile Include="Ula.cs" />
     <Compile Include="Z80File.cs" />
   </ItemGroup>

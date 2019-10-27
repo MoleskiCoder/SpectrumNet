@@ -1,12 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SpectrumNet
+﻿namespace SpectrumNet
 {
-    class Configuration
+    public class Configuration
     {
+        public bool DebugMode { get; set; } = false;
+
+        public bool ProfileMode { get; set; } = false;
+
+        public bool DrawGraphics { get; set; } = true;
+
+        public string RomDirectory { get; } = "roms";
+
+        public string ProgramDirectory { get; } = "programs";
     }
 }

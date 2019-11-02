@@ -8,6 +8,8 @@
         private readonly ColourPalette palette;
         private readonly List<Expansion> expansions = new List<Expansion>();
 
+        private readonly EightBit.Disassembler disassembler;
+
         private int allowed = 0;
 
         public Board(ColourPalette palette, Configuration configuration)
@@ -16,6 +18,7 @@
             this.configuration = configuration;
             this.CPU = new EightBit.Z80(this, this.Ports);
             this.ULA = new Ula(this.palette, this);
+            this.disassembler = new EightBit.Disassembler(this);
         }
 
         public EightBit.Z80 CPU { get; }
@@ -40,6 +43,11 @@
             this.Plug(romDirectory + "\\48.rom");	// ZX Spectrum Basic
 
             this.ULA.Proceed += this.ULA_Proceed;
+
+            if (this.configuration.DebugMode)
+            {
+                this.CPU.ExecutingInstruction += this.CPU_ExecutingInstruction;
+            }
         }
 
         public override void RaisePOWER()
@@ -129,5 +137,10 @@
         }
 
         private void ULA_Proceed(object sender, SteppingEventArgs e) => this.RunCycles(e.Cycles);
+
+        private void CPU_ExecutingInstruction(object sender, System.EventArgs e)
+        {
+            System.Console.Error.WriteLine($"{EightBit.Disassembler.State(this.CPU)}\t{this.disassembler.Disassemble(this.CPU)}");
+        }
     }
 }

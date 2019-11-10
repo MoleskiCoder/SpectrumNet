@@ -140,7 +140,7 @@
 
         private void CPU_ExecutingInstruction(object sender, System.EventArgs e)
         {
-            System.Console.Error.WriteLine($"{EightBit.Disassembler.State(this.CPU)}\t{this.disassembler.Disassemble(this.CPU)}");
+            System.Console.Error.WriteLine($"{EightBit.Disassembler.State(this.CPU)} {this.disassembler.Disassemble(this.CPU)}");
         }
     }
 }

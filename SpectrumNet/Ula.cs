@@ -14,7 +14,7 @@
         public const int TotalHeight = VerticalRetraceLines + RasterHeight;
 
         public const int CyclesPerSecond = 3500000; // 3.5Mhz
-        public float FramesPerSecond = 50.08f;
+        public const float FramesPerSecond = 50.08f;
 
         private const int UpperRasterBorder = 48;
         private const int ActiveRasterHeight = 192;
@@ -126,15 +126,14 @@
 
         protected override void OnRaisedPOWER()
         {
-            base.OnRaisedPOWER();
             this.frameCounter = 0;
-            this.borderColour = Color.Black;
+            this.Border = 0;
             this.flash = false;
+            base.OnRaisedPOWER();
         }
 
         protected override void OnTicked()
         {
-            base.OnTicked();
             var available = this.Cycles / 2;
             if (available > 0)
             {
@@ -142,6 +141,18 @@
                 this.FrameCycles += available;
                 this.ResetCycles();
             }
+            base.OnTicked();
+        }
+
+        private int IncrementFrameCounter()
+        {
+
+            if ((++this.frameCounter & (int)Mask.Mask4) == 0)
+            {
+                this.frameCounter = 0;
+            }
+
+            return this.frameCounter;
         }
 
         private void InitialiseKeyboardMapping()
@@ -185,11 +196,11 @@
             return (byte)returned;
         }
 
-        private bool UsedPort(byte port) => (port & (byte)EightBit.Bits.Bit0) == 0;
+        private static bool UsedPort(byte port) => (port & (byte)EightBit.Bits.Bit0) == 0;
 
         private void MaybeReadingPort(byte port)
         {
-            if (this.UsedPort(port))
+            if (UsedPort(port))
             {
                 this.ReadingPort(port);
             }
@@ -218,7 +229,7 @@
 
         private void MaybeWrittenPort(byte port)
         {
-            if (this.UsedPort(port))
+            if (UsedPort(port))
             {
                 this.WrittenPort(port);
             }
@@ -252,7 +263,7 @@
         {
             this.BUS.Sound.EndFrame();
             this.FrameCycles = 0;
-            if (++this.frameCounter == 0)
+            if (this.IncrementFrameCounter() == 0)
             {
                 this.Flash();
             }
@@ -271,11 +282,11 @@
             this.RenderRightHorizontalBorder(y);
         }
 
-        private void RenderLeftHorizontalBorder(int y) => this.RenderHorizontalBorder(0, y);
+        private void RenderLeftHorizontalBorder(int y) => this.RenderHorizontalBorder(0, y, HorizontalRasterBorder);
 
-        private void RenderRightHorizontalBorder(int y) => this.RenderHorizontalBorder(HorizontalRasterBorder + ActiveRasterWidth, y);
+        private void RenderRightHorizontalBorder(int y) => this.RenderHorizontalBorder(HorizontalRasterBorder + ActiveRasterWidth, y, HorizontalRasterBorder);
 
-        private void RenderHorizontalBorder(int x, int y, int width = HorizontalRasterBorder)
+        private void RenderHorizontalBorder(int x, int y, int width)
         {
             var begin = (y * RasterWidth) + x;
             for (var i = 0; i < width; ++i)

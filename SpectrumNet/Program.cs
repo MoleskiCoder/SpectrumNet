@@ -10,8 +10,9 @@
             var configuration = new Configuration();
 
 #if DEBUG
-            configuration.DebugMode = true;
+            //configuration.DebugMode = true;
 #endif
+            //configuration.DebugMode = true;
 
             using (var computer = new Cabinet(configuration))
             {

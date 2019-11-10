@@ -4,7 +4,7 @@
 
     public class ColourPalette
     {
-        enum Indices
+        public enum Indices
         {
             Black,
             Blue,
@@ -25,8 +25,12 @@
         }
 
         public Color GetColour(int index, bool bright) => this.GetColour(bright ? index + 8 : index);
+ 
+        public Color GetColour(Indices index, bool bright) => this.GetColour((int)index, bright);
 
         public Color GetColour(int index) => this.colours[index];
+
+        public Color GetColour(Indices index) => this.GetColour((int)index);
 
         public void Load()
         {

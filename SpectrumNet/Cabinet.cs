@@ -63,6 +63,8 @@
             this.Motherboard.Initialize();
             this.Motherboard.RaisePOWER();
 
+            this.TargetElapsedTime = TimeSpan.FromSeconds(1 / Ula.FramesPerSecond);
+
             this.OnInitialized();
         }
 

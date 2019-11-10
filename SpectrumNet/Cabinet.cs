@@ -138,12 +138,11 @@
         {
             this.Motherboard.RunVerticalBlank();
             this.Motherboard.RunRasterLines();
+            this.bitmapTexture.SetData(this.Motherboard.ULA.Pixels);
         }
 
         private void DisplayTexture()
         {
-            this.bitmapTexture.SetData(this.Motherboard.ULA.Pixels);
-
             this.spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
             this.spriteBatch.Draw(this.bitmapTexture, Vector2.Zero, null, Color.White, 0.0F, Vector2.Zero, DisplayScale, SpriteEffects.None, 0.0F);
             this.spriteBatch.End();

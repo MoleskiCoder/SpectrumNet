@@ -16,7 +16,9 @@
 
         private readonly ColourPalette palette = new ColourPalette();
 
-        private readonly List<Keys> pressed = new List<Keys>();
+        private readonly List<Keys> pressedKeys = new List<Keys>();
+        private readonly Dictionary<PlayerIndex, GamePadButtons> pressedButtons = new Dictionary<PlayerIndex, GamePadButtons>();
+        private readonly Dictionary<PlayerIndex, GamePadDPad> pressedDPad = new Dictionary<PlayerIndex, GamePadDPad>();
 
         private readonly GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
@@ -33,6 +35,11 @@
             {
                 IsFullScreen = false,
             };
+
+            this.pressedButtons[PlayerIndex.One] = new GamePadButtons();
+            this.pressedButtons[PlayerIndex.Two] = new GamePadButtons();
+            this.pressedDPad[PlayerIndex.One] = new GamePadDPad();
+            this.pressedDPad[PlayerIndex.Two] = new GamePadDPad();
         }
 
         public event EventHandler<EventArgs> Initializing;
@@ -42,6 +49,8 @@
         public Board Motherboard { get; }
 
         public Configuration Settings { get; }
+
+        public void Plug(Expansion expansion) => this.Motherboard.Plug(expansion);
 
         public void Plug(string path) => this.Motherboard.Plug(path);
 
@@ -71,6 +80,7 @@
         protected override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
+            this.CheckGamePads();
             this.CheckKeyboard();
             this.DrawFrame();
         }
@@ -103,19 +113,113 @@
             }
         }
 
+        private void CheckGamePads()
+        {
+            this.MaybeHandleGamePadOne();
+        }
+
+        private void MaybeHandleGamePadOne()
+        {
+            var capabilities = GamePad.GetCapabilities(PlayerIndex.One);
+            if (capabilities.IsConnected && (capabilities.GamePadType == GamePadType.GamePad))
+            {
+                this.HandleGamePadOne();
+            }
+        }
+
+        private void HandleGamePadOne()
+        {
+            var state = GamePad.GetState(PlayerIndex.One);
+
+            var currentButtons = state.Buttons;
+            var previousButtons = this.pressedButtons[PlayerIndex.One];
+
+            var currentDPad = state.DPad;
+            var previousDPad = this.pressedDPad[PlayerIndex.One];
+
+            for (var i = 0; i < this.Motherboard.NumberOfExpansions; ++i)
+            {
+                var expansion = this.Motherboard.Expansion(i);
+                var joystick = (Joystick)expansion;
+
+                // Up
+
+                if ((currentDPad.Up == ButtonState.Pressed) && (previousDPad.Up == ButtonState.Released))
+                {
+                    joystick.PushUp();
+                }
+
+                if ((currentDPad.Up == ButtonState.Released) && (previousDPad.Up == ButtonState.Pressed))
+                {
+                    joystick.ReleaseUp();
+                }
+
+                // Down
+
+                if ((currentDPad.Down == ButtonState.Pressed) && (previousDPad.Down == ButtonState.Released))
+                {
+                    joystick.PushDown();
+                }
+
+                if ((currentDPad.Down == ButtonState.Released) && (previousDPad.Down == ButtonState.Pressed))
+                {
+                    joystick.ReleaseDown();
+                }
+
+                // Left
+
+                if ((currentDPad.Left == ButtonState.Pressed) && (previousDPad.Left == ButtonState.Released))
+                {
+                    joystick.PushLeft();
+                }
+
+                if ((currentDPad.Left == ButtonState.Released) && (previousDPad.Left == ButtonState.Pressed))
+                {
+                    joystick.ReleaseLeft();
+                }
+
+                // Right
+
+                if ((currentDPad.Right == ButtonState.Pressed) && (previousDPad.Right == ButtonState.Released))
+                {
+                    joystick.PushRight();
+                }
+
+                if ((currentDPad.Right == ButtonState.Released) && (previousDPad.Right == ButtonState.Pressed))
+                {
+                    joystick.ReleaseRight();
+                }
+
+                // Fire
+
+                if ((currentButtons.A == ButtonState.Pressed) && (previousButtons.A == ButtonState.Released))
+                {
+                    joystick.PushFire();
+                }
+
+                if ((currentButtons.A == ButtonState.Released) && (previousButtons.A == ButtonState.Pressed))
+                {
+                    joystick.ReleaseFire();
+                }
+            }
+
+            this.pressedButtons[PlayerIndex.One] = currentButtons;
+            this.pressedDPad[PlayerIndex.One] = currentDPad;
+        }
+
         private void CheckKeyboard()
         {
             var state = Keyboard.GetState();
             var current = new HashSet<Keys>(state.GetPressedKeys());
 
-            var newlyReleased = this.pressed.Except(current);
+            var newlyReleased = this.pressedKeys.Except(current);
             this.UpdateReleasedKeys(newlyReleased);
 
-            var newlyPressed = current.Except(this.pressed);
+            var newlyPressed = current.Except(this.pressedKeys);
             this.UpdatePressedKeys(newlyPressed);
 
-            this.pressed.Clear();
-            this.pressed.AddRange(current);
+            this.pressedKeys.Clear();
+            this.pressedKeys.AddRange(current);
         }
 
         private void UpdatePressedKeys(IEnumerable<Keys> keys)

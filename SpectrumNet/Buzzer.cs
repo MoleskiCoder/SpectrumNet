@@ -11,16 +11,16 @@
         private readonly DynamicSoundEffectInstance sounds = new DynamicSoundEffectInstance(SampleRate, AudioChannels.Mono);
         private readonly byte[] buffer;
         private int lastSample = 0;
-        private short lastState = 0;
+        private short lastLevel = 0;
 
         public Buzzer()
         {
-            var frameLength = new TimeSpan(0, 0, 0, 0, (int)(1000.0 / Ula.FramesPerSecond));
+            var frameLength = TimeSpan.FromSeconds(1.0 / Ula.FramesPerSecond);
             var numberOfSampleBytes = this.sounds.GetSampleSizeInBytes(frameLength);
-            this.buffer = new byte[numberOfSampleBytes + 1];
+            this.buffer = new byte[numberOfSampleBytes];
         }
 
-        int NumberOfSamples => this.buffer.Length / 2;
+        private int NumberOfSamples => this.buffer.Length / 2;
 
         public void Buzz(EightBit.PinLevel state, int cycle)
         {
@@ -30,9 +30,9 @@
 
         public void EndFrame()
         {
-            this.FillBuffer(this.lastSample, this.NumberOfSamples, this.lastState);
-            //this.sounds.SubmitBuffer(this.buffer);
-            //this.sounds.Play();
+            this.FillBuffer(this.lastSample, this.NumberOfSamples, this.lastLevel);
+            this.sounds.SubmitBuffer(this.buffer);
+            this.sounds.Play();
             this.lastSample = 0;
         }
 
@@ -43,9 +43,9 @@
                 throw new InvalidOperationException("Whoops: this sample comes before last sample!");
             }
 
-            this.FillBuffer(this.lastSample, sample, this.lastState);
+            this.FillBuffer(this.lastSample, sample, this.lastLevel);
             this.lastSample = sample;
-            this.lastState = value;
+            this.lastLevel = value;
         }
 
         private void FillBuffer(int from, int to, short value)

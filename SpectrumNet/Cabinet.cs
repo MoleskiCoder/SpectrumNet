@@ -75,6 +75,7 @@
             this.Motherboard.RaisePOWER();
 
             this.TargetElapsedTime = Ula.FrameLength;
+            this.IsMouseVisible = false;
 
             this.OnInitialized();
         }

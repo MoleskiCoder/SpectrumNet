@@ -1,6 +1,5 @@
 ﻿namespace SpectrumNet
 {
-    using System;
     using EightBit;
     using Microsoft.Xna.Framework.Audio;
 
@@ -37,11 +36,6 @@
 
         private void Buzz(short value, int sample)
         {
-            if (sample < this.lastSample)
-            {
-                throw new InvalidOperationException("Whoops: this sample comes before last sample!");
-            }
-
             this.FillBuffer(this.lastSample, sample, this.lastLevel);
             this.lastSample = sample;
             this.lastLevel = value;
@@ -62,7 +56,7 @@
         {
             var ratio = (float)SampleRate / (float)Ula.CyclesPerSecond;
             var sample = (float)cycle * ratio;
-	        return (int)sample;
+            return (int)sample;
         }
     }
 }

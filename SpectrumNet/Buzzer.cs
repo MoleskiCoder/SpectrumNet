@@ -15,9 +15,9 @@
 
         public Buzzer()
         {
-            var frameLength = TimeSpan.FromSeconds(1.0 / Ula.FramesPerSecond);
-            var numberOfSampleBytes = this.sounds.GetSampleSizeInBytes(frameLength);
+            var numberOfSampleBytes = this.sounds.GetSampleSizeInBytes(Ula.FrameLength);
             this.buffer = new byte[numberOfSampleBytes];
+            this.sounds.Play();
         }
 
         private int NumberOfSamples => this.buffer.Length / 2;
@@ -32,7 +32,6 @@
         {
             this.FillBuffer(this.lastSample, this.NumberOfSamples, this.lastLevel);
             this.sounds.SubmitBuffer(this.buffer);
-            this.sounds.Play();
             this.lastSample = 0;
         }
 

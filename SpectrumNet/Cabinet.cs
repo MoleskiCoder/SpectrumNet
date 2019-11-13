@@ -54,6 +54,8 @@
 
         public void Plug(string path) => this.Motherboard.Plug(path);
 
+        public void LoadZ80(string path) => this.Motherboard.LoadZ80(path);
+
         protected void OnInitializing() => this.Initializing?.Invoke(this, EventArgs.Empty);
 
         protected void OnInitialized() => this.Initialized?.Invoke(this, EventArgs.Empty);
@@ -72,7 +74,7 @@
             this.Motherboard.Initialize();
             this.Motherboard.RaisePOWER();
 
-            this.TargetElapsedTime = TimeSpan.FromSeconds(1 / Ula.FramesPerSecond);
+            this.TargetElapsedTime = Ula.FrameLength;
 
             this.OnInitialized();
         }

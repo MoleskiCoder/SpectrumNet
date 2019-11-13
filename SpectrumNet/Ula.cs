@@ -71,6 +71,8 @@
 
         public event EventHandler<SteppingEventArgs> Proceed;
 
+        public static TimeSpan FrameLength => TimeSpan.FromSeconds(1 / FramesPerSecond);
+
         public int Border
         {
             set

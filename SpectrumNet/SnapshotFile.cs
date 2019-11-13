@@ -24,6 +24,7 @@
                 throw new InvalidOperationException("Whoops: CPU has not been powered on.");
             }
 
+            this.ExamineHeaders();
             this.LoadRegisters(board.CPU);
             this.LoadMemory(board);
         }

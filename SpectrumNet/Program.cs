@@ -10,12 +10,13 @@
             var configuration = new Configuration();
 
 #if DEBUG
-            //configuration.DebugMode = true;
+            configuration.DebugMode = true;
 #endif
-            //configuration.DebugMode = true;
 
             using (var computer = new Cabinet(configuration))
             {
+                computer.Plug(new KempstonJoystick(computer.Motherboard));
+                computer.Plug(new Interface2Joystick(computer.Motherboard));
                 computer.Initialized += Computer_Initialized;
                 computer.Run();
             }
@@ -37,6 +38,7 @@
             computer.Plug(romDirectory + "\\smart\\ROMs\\DiagROM.v41");
 
             var programDirectory = configuration.ProgramDirectory;
+            //computer.LoadZ80(programDirectory + "\\Jetpac (1983)(Ultimate Play The Game)[a][16K].z80");
         }
     }
 }

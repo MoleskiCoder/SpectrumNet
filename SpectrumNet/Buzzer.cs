@@ -6,6 +6,7 @@
     public class Buzzer
     {
         private const int SampleRate = 44100;
+        private const short LevelDivider = 2;
 
         private readonly DynamicSoundEffectInstance sounds = new DynamicSoundEffectInstance(SampleRate, AudioChannels.Mono);
         private readonly byte[] buffer;
@@ -23,8 +24,8 @@
 
         public void Buzz(EightBit.PinLevel state, int cycle)
         {
-            var level = state.Raised() ? short.MaxValue : short.MinValue;
-            this.Buzz(level, Sample(cycle));
+            var level = state.Raised() ? short.MaxValue: short.MinValue;
+            this.Buzz((short)(level / LevelDivider), Sample(cycle));
         }
 
         public void EndFrame()
@@ -45,17 +46,15 @@
         {
             for (var i = from; i < to; ++i)
             {
-                var low = EightBit.Chip.LowByte(value);
-                var high = EightBit.Chip.HighByte(value);
-                this.buffer[i * 2] = low;
-                this.buffer[(i * 2) + 1] = high;
+                this.buffer[i * 2] = EightBit.Chip.LowByte(value);
+                this.buffer[(i * 2) + 1] = EightBit.Chip.HighByte(value);
             }
         }
 
         private static int Sample(int cycle)
         {
             var ratio = (float)SampleRate / (float)Ula.CyclesPerSecond;
-            var sample = (float)cycle * ratio;
+            var sample = cycle * ratio;
             return (int)sample;
         }
     }

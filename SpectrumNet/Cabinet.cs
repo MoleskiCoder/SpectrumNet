@@ -54,6 +54,8 @@
 
         public void Plug(string path) => this.Motherboard.Plug(path);
 
+        public void LoadSna(string path) => this.Motherboard.LoadSna(path);
+
         public void LoadZ80(string path) => this.Motherboard.LoadZ80(path);
 
         protected void OnInitializing() => this.Initializing?.Invoke(this, EventArgs.Empty);

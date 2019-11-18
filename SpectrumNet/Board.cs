@@ -98,19 +98,11 @@
             z80.Load(this);
         }
 
-        public void RunVerticalBlank()
+        public void RenderLines()
         {
-            for (var i = 0; i < Ula.VerticalRetraceLines; ++i)
+            for (var i = 0; i < Ula.TotalHeight; ++i)
             {
                 this.ULA.RenderLine(i);
-            }
-        }
-
-        public void RunRasterLines()
-        {
-            for (var i = 0; i < Ula.RasterHeight; ++i)
-            {
-                this.ULA.RenderLine(i + Ula.VerticalRetraceLines);
             }
         }
 

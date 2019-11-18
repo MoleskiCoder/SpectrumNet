@@ -245,8 +245,7 @@
 
         private void DrawFrame()
         {
-            this.Motherboard.RunVerticalBlank();
-            this.Motherboard.RunRasterLines();
+            this.Motherboard.RenderLines();
             this.bitmapTexture.SetData(this.Motherboard.ULA.Pixels);
         }
 

@@ -35,7 +35,6 @@
         private Color borderColour;
 
         // Output port information
-        private int border;  // Bits 0 - 2
         private EightBit.PinLevel mic = EightBit.PinLevel.Low; // Bit 3
         private EightBit.PinLevel speaker = EightBit.PinLevel.Low; // Bit 4
 
@@ -75,11 +74,7 @@
 
         public int Border
         {
-            set
-            {
-                this.border = value;
-                this.borderColour = this.palette.GetColour(this.border, false);
-            }
+            set => this.borderColour = this.palette.GetColour(value, false);
         }
 
         public Color[] Pixels { get; } = new Color[RasterWidth * RasterHeight];
@@ -90,21 +85,20 @@
 
         public void RenderLine(int y)
         {
-            // Start of vertical retrace
-            if (y == 0)
-            {
-                this.StartFrame();
-            }
-
-            // Vertical retrace?
+            // Vertical retrace
             if ((y & (int)~Mask.Mask4) == 0)
             {
+                if (y == 0)
+                {
+                    this.StartFrame();  // Start of vertical retrace
+
+                }
+
                 this.Tick(RasterWidth);
-                return;
             }
 
             // Upper border
-            if ((y & (int)~Mask.Mask6) == 0)
+            else if ((y & (int)~Mask.Mask6) == 0)
             {
                 this.RenderBlankLine(y - VerticalRetraceLines);
             }

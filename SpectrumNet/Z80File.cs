@@ -4,6 +4,18 @@
 
     public sealed class Z80File : SnapshotFile
     {
+        private enum HardwareModeV2
+        {
+            FortyEightK,
+            FortyEightK_IF1,
+            SamRam,
+            OneTwentyEightK,
+            OneTwentyEightK_IF1,
+            Unknown = -1
+        }
+
+        const int BlockSize = 0x4000;
+
         // V1 Header block
 
         private const int Offset_A = 0;
@@ -48,16 +60,24 @@
 
         private const int HeaderSizeV1 = Offset_misc_2 + 1;
 
-        private const int RamSize = (32 + 16) * 1024;
+        private const int Offset_length_additional_header_block = 30;
+        private const int Offset_V2_PC = 32;
+        private const int Offset_hardware_mode = 34;
 
         private int version = 0;    // Illegal, by default!
+        private HardwareModeV2 hardwareModeV2 = HardwareModeV2.Unknown;
 
         protected override void ExamineHeaders()
         {
             switch (this.PeekWord(Offset_PC))
             {
                 case 0:
-                    this.version = 2;
+                    this.version = this.PeekWord(Offset_length_additional_header_block) == 23 ? 2 : 3;
+                    if (this.version == 2)
+                    {
+                        this.hardwareModeV2 = (HardwareModeV2)this.Peek(Offset_hardware_mode);
+                    }
+
                     break;
                 default:
                     this.version = 1;
@@ -70,6 +90,22 @@
         {
         }
 
+        private int HeaderSize
+        {
+            get
+            {
+                switch (this.version)
+                {
+                    case 1:
+                        return HeaderSizeV1;
+                    case 2:
+                        return HeaderSizeV1 + this.PeekWord(Offset_length_additional_header_block) + 2; // Why +2 needed??
+                    default:
+                        throw new InvalidOperationException("Unknown Z80 file version");
+                }
+            }
+        }
+
 	    public override void Load(Board board)
         {
             base.Load(board);
@@ -78,11 +114,6 @@
 
         protected override void LoadRegisters(EightBit.Z80 cpu)
         {
-            if (this.version != 1)
-            {
-                throw new InvalidOperationException("Only V1 Z80 supported at the moment");
-            }
-
             cpu.RaiseRESET();
 
             cpu.A = this.Peek(Offset_A);
@@ -90,7 +121,7 @@
 
             cpu.BC.Word = this.PeekWord(Offset_BC);
             cpu.HL.Word = this.PeekWord(Offset_HL);
-            cpu.PC.Word = this.PeekWord(Offset_PC);
+            cpu.PC.Word = this.PeekWord(Offset_PC); // Only valid for V1
             cpu.SP.Word = this.PeekWord(Offset_SP);
 
             cpu.IV = this.Peek(Offset_I);
@@ -122,6 +153,11 @@
 
             cpu.Exx();
             cpu.ExxAF();
+
+            if (this.version > 1)
+            {
+                cpu.PC.Word = this.PeekWord(Offset_V2_PC);
+            }
         }
 
         protected override void LoadMemory(Board board)
@@ -131,8 +167,20 @@
                 case 1:
                     this.LoadMemoryV1(board);
                     break;
+                case 2:
+                    switch (this.hardwareModeV2)
+                    {
+                        case HardwareModeV2.FortyEightK:
+                        case HardwareModeV2.FortyEightK_IF1:
+                            this.LoadMemoryV2(board);
+                            break;
+                        default:
+                            throw new InvalidOperationException("Only 48K ZX Spectrums are handled.");
+                    }
+
+                    break;
                 default:
-                    throw new InvalidOperationException("Only V1 Z80 files are handled.");
+                    throw new InvalidOperationException("Only V1 or V2 Z80 files are handled.");
             }
         }
 
@@ -147,41 +195,117 @@
             var compressed = (this.Misc1() & (byte)EightBit.Bits.Bit5) != 0;
             if (compressed)
             {
-                this.LoadMemoryCompressedV1(board, HeaderSizeV1);
+                this.LoadMemoryCompressedV1(board, (ushort)this.HeaderSize);
             }
             else
             {
-                this.LoadMemoryUncompressed(board, HeaderSizeV1);
+                this.LoadMemoryUncompressed(board, (ushort)this.HeaderSize);
             }
         }
 
         private void LoadMemoryCompressedV1(Board board, ushort offset)
         {
+            System.Diagnostics.Debug.WriteLine($"LoadMemoryCompressedV1: offset={offset}");
+
             var position = board.ROM.Size;
-            var fileSize = this.Size - 4;
+            var fileSize = this.Size - offset - 2;
             this.LoadCompressedBlock(board, offset, (ushort)position, (ushort)fileSize);
         }
 
-        private void LoadMemoryUncompressed(Board board, int offset)
+        private void LoadMemoryV2(Board board)
         {
-            for (var i = 0; i < RamSize; ++i)
+            System.Diagnostics.Debug.WriteLine("LoadMemoryV2");
+
+            var position = (ushort)this.HeaderSize;
+            while (position < this.Size)
             {
-                board.Poke((ushort)(board.ROM.Size + i), this.Peek((ushort)(offset + i)));
+                position += this.LoadMemoryBlock(board, position);
             }
         }
 
-        private ushort LoadCompressedBlock(Board board, ushort source)
+        private ushort LoadMemoryBlock(Board board, ushort offset)
         {
-            var length = this.PeekWord(source);
-            var block = this.Peek((ushort)(source + 2));
-            this.LoadCompressedBlock(board, (ushort)(source + 3), (ushort)(block * 0x4000), length);
-            return length;
+            System.Diagnostics.Debug.WriteLine($"LoadMemoryBlock: offset={offset}");
+
+            var offsetLength = offset;
+            var offsetPage = (ushort)(offsetLength + 2);
+            var offsetBlock = (ushort)(offsetPage + 1);
+
+            var length = this.PeekWord(offsetLength);
+            var page = this.Peek(offsetPage);
+            var uncompressed = length == 0xffff;
+            if (uncompressed)
+            {
+                length = 0x4000;
+            }
+
+            int convertedPage;
+            switch (page)
+            {
+                case 0: // 48K ROM!
+                    throw new InvalidOperationException("Cannot overwrite ROM from Z80 file!");
+                case 8: // 0x4000 - 0x7fff
+                    convertedPage = 1;
+                    break;
+                case 4: // 0x8000 - 0xbfff
+                    convertedPage = 2;
+                    break;
+                case 5: // 0xc000 - 0xffff
+                    convertedPage = 3;
+                    break;
+                default:
+                    throw new InvalidOperationException("Invalid page load detected!");
+            }
+
+            var destination = (ushort)(convertedPage * BlockSize);
+            if (uncompressed)
+            {
+                this.LoadUncompressedBlock(board, offsetBlock, destination, length);
+            }
+            else
+            {
+                this.LoadCompressedBlock(board, offsetBlock, destination, length);
+            }
+
+            return (ushort)(length + 3);
+        }
+
+        private void LoadMemoryUncompressed(Board board, ushort offset)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoadMemoryUncompressed: offset={offset}");
+
+            var position = offset;
+            for (var block = 1; block < 4; ++block)
+            {
+                this.LoadMemoryUncompressed(board, position, block);
+                position += BlockSize;
+            }
+        }
+
+        private void LoadMemoryUncompressed(Board board, ushort offset, int block)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoadMemoryUncompressed: offset={offset}, block={block}");
+
+            var start = (ushort)(block * BlockSize);
+            this.LoadUncompressedBlock(board, offset, start, BlockSize);
+        }
+
+        private void LoadUncompressedBlock(Board board, ushort source, ushort destination, ushort length)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoadUncompressedBlock: source={source}, destination={destination:x4}, length={length:x4}");
+
+            for (ushort i = 0; i < length; ++i)
+            {
+                board.Poke(destination++, this.Peek(source++));
+            }
         }
 
         private void LoadCompressedBlock(Board board, ushort source, ushort destination, ushort length)
         {
+            System.Diagnostics.Debug.WriteLine($"LoadCompressedBlock: source={source}, destination={destination:x4}, length={length:x4}");
+
             var previous = 0x100;
-            for (var i = source; i != length; ++i)
+            for (var i = source; i < (length + source); ++i)
             {
                 var current = this.ROM.Peek(i);
                 if (current == 0xed && previous == 0xed)

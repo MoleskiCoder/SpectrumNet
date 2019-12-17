@@ -6,7 +6,7 @@
         : base(board)
         { }
 
-        public override Type ExpansionType => Type.JOYSTICK;
+        public override Type ExpansionType => Type.Joystick;
 
         public abstract void PushUp();
 

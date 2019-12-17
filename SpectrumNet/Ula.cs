@@ -29,7 +29,7 @@
 
         private readonly ushort[] scanLineAddresses = new ushort[256];
         private readonly ushort[] attributeAddresses = new ushort[256];
-        private readonly ColourPalette palette;
+        private readonly ColorPalette palette;
         private bool flash = false;
         private int frameCounter = 0;
         private Color borderColour;
@@ -44,10 +44,10 @@
         private readonly Dictionary<byte, Keys[]> keyboardMapping = new Dictionary<byte, Keys[]>();
         private readonly HashSet<Keys> keyboardRaw = new HashSet<Keys>();
 
-        public Ula(ColourPalette palette, Board bus)
+        public Ula(ColorPalette palette, Board bus)
         {
-            this.palette = palette;
-            this.BUS = bus;
+            this.palette = palette ?? throw new ArgumentNullException(nameof(palette));
+            this.BUS = bus ?? throw new ArgumentNullException(nameof(bus));
 
             this.InitialiseKeyboardMapping();
 
@@ -72,10 +72,7 @@
 
         public static TimeSpan FrameLength => TimeSpan.FromSeconds(1 / FramesPerSecond);
 
-        public int Border
-        {
-            set => this.borderColour = this.palette.GetColour(value, false);
-        }
+        public void UpdateBorder(int value) => this.borderColour = this.palette.GetColor(value, false);
 
         public Color[] Pixels { get; } = new Color[RasterWidth * RasterHeight];
 
@@ -91,7 +88,6 @@
                 if (y == 0)
                 {
                     this.StartFrame();  // Start of vertical retrace
-
                 }
 
                 this.Tick(RasterWidth);
@@ -123,7 +119,7 @@
         protected override void OnRaisedPOWER()
         {
             this.frameCounter = 0;
-            this.Border = 0;
+            this.UpdateBorder(0);
             this.flash = false;
             base.OnRaisedPOWER();
         }
@@ -250,7 +246,7 @@
             this.mic.Match(value & (byte)Bits.Bit3);
             this.speaker.Match(value & (byte)Bits.Bit4);
 
-            this.Border = value & (byte)Mask.Mask3;
+            this.UpdateBorder(value & (byte)Mask.Mask3);
 
             this.BUS.Sound.Buzz(this.speaker, this.FrameCycles);
         }
@@ -312,10 +308,10 @@
                 var ink = attribute & (byte)Mask.Mask3;
                 var paper = (attribute >> 3) & (int)Mask.Mask3;
                 var bright = (attribute & (byte)Bits.Bit6) != 0;
-                var flash = (attribute & (byte)Bits.Bit7) != 0;
+                var flashing = (attribute & (byte)Bits.Bit7) != 0;
 
-                var background = this.palette.GetColour(flash && this.flash ? ink : paper, bright);
-                var foreground = this.palette.GetColour(flash && this.flash ? paper : ink, bright);
+                var background = this.palette.GetColor(flashing && this.flash ? ink : paper, bright);
+                var foreground = this.palette.GetColor(flashing && this.flash ? paper : ink, bright);
 
                 for (var bit = 0; bit < 8; ++bit)
                 {

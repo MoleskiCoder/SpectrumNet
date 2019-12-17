@@ -8,13 +8,13 @@
     using System.Collections.Generic;
     using System.Linq;
 
-    public class Cabinet : Game
+    public sealed class Cabinet : Game
     {
         private const int DisplayScale = 2;
         private const int DisplayWidth = Ula.RasterWidth;
         private const int DisplayHeight = Ula.RasterHeight;
 
-        private readonly ColourPalette palette = new ColourPalette();
+        private readonly ColorPalette palette = new ColorPalette();
 
         private readonly List<Keys> pressedKeys = new List<Keys>();
         private readonly Dictionary<PlayerIndex, GamePadButtons> pressedButtons = new Dictionary<PlayerIndex, GamePadButtons>();
@@ -58,9 +58,9 @@
 
         public void LoadZ80(string path) => this.Motherboard.LoadZ80(path);
 
-        protected void OnInitializing() => this.Initializing?.Invoke(this, EventArgs.Empty);
+        private void OnInitializing() => this.Initializing?.Invoke(this, EventArgs.Empty);
 
-        protected void OnInitialized() => this.Initialized?.Invoke(this, EventArgs.Empty);
+        private void OnInitialized() => this.Initialized?.Invoke(this, EventArgs.Empty);
 
         protected override void Initialize()
         {
@@ -109,6 +109,7 @@
             {
                 if (disposing)
                 {
+                    this.Motherboard?.Dispose();
                     this.bitmapTexture?.Dispose();
                     this.spriteBatch?.Dispose();
                     this.graphics?.Dispose();

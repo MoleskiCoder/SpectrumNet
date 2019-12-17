@@ -109,7 +109,7 @@
 	    public override void Load(Board board)
         {
             base.Load(board);
-            board.ULA.Border = (this.Misc1() >> 1) & (int)EightBit.Mask.Mask3;
+            board.ULA.UpdateBorder((this.Misc1() >> 1) & (int)EightBit.Mask.Mask3);
         }
 
         protected override void LoadRegisters(EightBit.Z80 cpu)
@@ -192,6 +192,8 @@
 
         private void LoadMemoryV1(Board board)
         {
+            System.Diagnostics.Debug.WriteLine("LoadMemoryV1");
+
             var compressed = (this.Misc1() & (byte)EightBit.Bits.Bit5) != 0;
             if (compressed)
             {

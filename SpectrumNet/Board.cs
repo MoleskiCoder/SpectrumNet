@@ -1,18 +1,21 @@
 ﻿namespace SpectrumNet
 {
+    using System;
     using System.Collections.Generic;
 
-    public sealed class Board  : EightBit.Bus
+    public sealed class Board  : EightBit.Bus, IDisposable
     {
         private readonly Configuration configuration;
-        private readonly ColourPalette palette;
+        private readonly ColorPalette palette;
         private readonly List<Expansion> expansions = new List<Expansion>();
 
         private readonly EightBit.Disassembler disassembler;
 
         private int allowed = 0;
 
-        public Board(ColourPalette palette, Configuration configuration)
+        private bool disposed = false;
+
+        public Board(ColorPalette palette, Configuration configuration)
         {
             this.palette = palette;
             this.configuration = configuration;
@@ -36,6 +39,12 @@
         public EightBit.Ram WRAM { get; } = new EightBit.Ram(0x8000);
 
         public int NumberOfExpansions => this.expansions.Count;
+
+        public void Dispose()
+        {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
+        }
 
         public override void Initialize()
         {
@@ -119,6 +128,19 @@
             }
 
             return new EightBit.MemoryMapping(this.WRAM, 0x8000, 0xffff, EightBit.AccessLevel.ReadWrite);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (!this.disposed)
+            {
+                if (disposing)
+                {
+                    this.Sound.Dispose();
+                }
+
+                this.disposed = true;
+            }
         }
 
         private void RunCycles(int suggested)

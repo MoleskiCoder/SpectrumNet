@@ -4,7 +4,7 @@
     {
         public enum Type
         {
-            JOYSTICK
+            Joystick
         }
 
         public Expansion(Board motherboard) => this.BUS = motherboard;

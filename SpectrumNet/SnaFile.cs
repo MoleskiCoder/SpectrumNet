@@ -33,7 +33,7 @@
         {
             base.Load(board);
 
-            board.ULA.Border = this.Peek(Offset_BorderColour);
+            board.ULA.UpdateBorder(this.Peek(Offset_BorderColour));
 
             // XXXX HACK, HACK, HACK!!
             var original = board.CPU.PeekWord(0xfffe);

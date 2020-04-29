@@ -24,6 +24,8 @@
         private SpriteBatch spriteBatch;
         private Texture2D bitmapTexture;
 
+        private double missedFrames = 0.0;
+
         private bool disposed = false;
 
         public Cabinet(Configuration configuration)
@@ -87,13 +89,23 @@
             base.Update(gameTime);
             this.CheckGamePads();
             this.CheckKeyboard();
-            this.DrawFrame();
+
+            if (this.missedFrames > 1.0)
+            {
+                --this.missedFrames;
+            }
+            else
+            {
+                this.RunFrame();
+            }
         }
 
         protected override void Draw(GameTime gameTime)
         {
+            this.missedFrames += this.CalculateMissedFrames(gameTime);
+
             base.Draw(gameTime);
-            this.DisplayTexture();
+            this.DrawPixels();
         }
 
         protected override void OnExiting(object sender, EventArgs args)
@@ -244,14 +256,11 @@
             }
         }
 
-        private void DrawFrame()
-        {
-            this.Motherboard.RenderLines();
-            this.bitmapTexture.SetData(this.Motherboard.ULA.Pixels);
-        }
+        private void RunFrame() => this.Motherboard.RenderLines();
 
-        private void DisplayTexture()
+        private void DrawPixels()
         {
+            this.bitmapTexture.SetData(this.Motherboard.ULA.Pixels);
             this.spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
             this.spriteBatch.Draw(this.bitmapTexture, Vector2.Zero, null, Color.White, 0.0F, Vector2.Zero, DisplayScale, SpriteEffects.None, 0.0F);
             this.spriteBatch.End();
@@ -263,5 +272,9 @@
             this.graphics.PreferredBackBufferHeight = DisplayScale * height;
             this.graphics.ApplyChanges();
         }
+
+        private double CalculateMissedFrames(GameTime gameTime) => this.CalculateFrameGap(gameTime) - 1.0;
+
+        private double CalculateFrameGap(GameTime gameTime) => gameTime.ElapsedGameTime.TotalMilliseconds / this.TargetElapsedTime.TotalMilliseconds;
     }
 }

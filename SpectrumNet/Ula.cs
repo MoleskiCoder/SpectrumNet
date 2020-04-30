@@ -168,12 +168,7 @@
             for (var row = 0; row < 8; ++row)
             {
                 var current = Bit(row);
-                if ((rows & current) == 0)
-                {
-                    continue;
-                }
-
-                if (this.keyboardMapping.TryGetValue(current, out var keys))
+                if (((rows & current) != 0) && this.keyboardMapping.TryGetValue(current, out var keys))
                 {
                     for (var column = 0; column < 5; ++column)
                     {

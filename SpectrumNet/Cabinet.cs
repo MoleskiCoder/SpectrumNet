@@ -24,8 +24,6 @@
         private SpriteBatch spriteBatch;
         private Texture2D bitmapTexture;
 
-        private double missedFrames = 0.0;
-
         private bool disposed = false;
 
         public Cabinet(Configuration configuration)
@@ -87,23 +85,16 @@
         protected override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
-            this.CheckGamePads();
-            this.CheckKeyboard();
-
-            if (this.missedFrames > 1.0)
+            if (!gameTime.IsRunningSlowly)
             {
-                --this.missedFrames;
-            }
-            else
-            {
+                this.CheckGamePads();
+                this.CheckKeyboard();
                 this.RunFrame();
             }
         }
 
         protected override void Draw(GameTime gameTime)
         {
-            this.missedFrames += this.CalculateMissedFrames(gameTime);
-
             base.Draw(gameTime);
             this.DrawPixels();
         }
@@ -272,9 +263,5 @@
             this.graphics.PreferredBackBufferHeight = DisplayScale * height;
             this.graphics.ApplyChanges();
         }
-
-        private double CalculateMissedFrames(GameTime gameTime) => this.CalculateFrameGap(gameTime) - 1.0;
-
-        private double CalculateFrameGap(GameTime gameTime) => gameTime.ElapsedGameTime.TotalMilliseconds / this.TargetElapsedTime.TotalMilliseconds;
     }
 }

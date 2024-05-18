@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29411.108
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34902.65
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpectrumNet", "SpectrumNet\SpectrumNet.csproj", "{82C9DDFA-ADFB-450A-86B6-A65993D8D530}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpectrumNet", "SpectrumNet\SpectrumNet.csproj", "{3A78C4E2-E297-458B-AB30-0A6E21A78022}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Z80", "libraries\EightBitNet\Z80\Z80.csproj", "{C00648C1-BAC1-4EFB-816F-E87C091619D7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EightBit", "libraries\EightBitNet\EightBit\EightBit.csproj", "{7B37D11A-124B-48B4-917D-93CAE5A60D65}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EightBit", "libraries\EightBitNet\EightBit\EightBit.csproj", "{6EBF8857-62A3-4EF4-AF21-C1844031D7E4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Z80", "libraries\EightBitNet\Z80\Z80.csproj", "{DD31F876-CC26-4230-B04F-87B6F6D0C1BA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,23 +15,23 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{82C9DDFA-ADFB-450A-86B6-A65993D8D530}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{82C9DDFA-ADFB-450A-86B6-A65993D8D530}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{82C9DDFA-ADFB-450A-86B6-A65993D8D530}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{82C9DDFA-ADFB-450A-86B6-A65993D8D530}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C00648C1-BAC1-4EFB-816F-E87C091619D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C00648C1-BAC1-4EFB-816F-E87C091619D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C00648C1-BAC1-4EFB-816F-E87C091619D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C00648C1-BAC1-4EFB-816F-E87C091619D7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6EBF8857-62A3-4EF4-AF21-C1844031D7E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6EBF8857-62A3-4EF4-AF21-C1844031D7E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6EBF8857-62A3-4EF4-AF21-C1844031D7E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6EBF8857-62A3-4EF4-AF21-C1844031D7E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A78C4E2-E297-458B-AB30-0A6E21A78022}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A78C4E2-E297-458B-AB30-0A6E21A78022}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A78C4E2-E297-458B-AB30-0A6E21A78022}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A78C4E2-E297-458B-AB30-0A6E21A78022}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B37D11A-124B-48B4-917D-93CAE5A60D65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B37D11A-124B-48B4-917D-93CAE5A60D65}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B37D11A-124B-48B4-917D-93CAE5A60D65}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B37D11A-124B-48B4-917D-93CAE5A60D65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD31F876-CC26-4230-B04F-87B6F6D0C1BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD31F876-CC26-4230-B04F-87B6F6D0C1BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD31F876-CC26-4230-B04F-87B6F6D0C1BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD31F876-CC26-4230-B04F-87B6F6D0C1BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {328CB7D0-F50E-4536-8602-BB150DDFE386}
+		SolutionGuid = {2ADF0AA6-2273-49AB-A45F-54AEBC03DAFF}
 	EndGlobalSection
 EndGlobal

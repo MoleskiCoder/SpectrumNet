@@ -3,13 +3,14 @@
     using EightBit;
     using Microsoft.Xna.Framework.Audio;
     using System;
+    using System.Runtime.InteropServices;
 
     public class Buzzer : IDisposable
     {
         private const int SampleRate = 44100;
         private const float SampleCycleRatio = SampleRate / (float)Ula.CyclesPerSecond;
 
-        private readonly DynamicSoundEffectInstance sounds = new DynamicSoundEffectInstance(SampleRate, AudioChannels.Mono);
+        private readonly DynamicSoundEffectInstance sounds = new(SampleRate, AudioChannels.Mono);
         private readonly byte[] buffer;
         private int lastSample = 0;
         private short lastLevel = 0;
@@ -19,10 +20,13 @@
         public Buzzer()
         {
             var numberOfSampleBytes = this.sounds.GetSampleSizeInBytes(Ula.FrameLength);
+            if (numberOfSampleBytes % 2 != 0)
+            {
+                ++numberOfSampleBytes;
+            }
             this.buffer = new byte[numberOfSampleBytes];
             this.sounds.Play();
         }
-
         private int NumberOfSamples => this.buffer.Length / 2;
 
         public void Dispose()
@@ -66,11 +70,9 @@
 
         private void FillBuffer(int from, int to, short value)
         {
-            for (var i = from; i < to; ++i)
-            {
-                this.buffer[i * 2] = EightBit.Chip.LowByte(value);
-                this.buffer[(i * 2) + 1] = EightBit.Chip.HighByte(value);
-            }
+            var samples = MemoryMarshal.Cast<byte, short>(this.buffer);
+            var section = samples[from..to];
+            section.Fill(value);
         }
 
         private static int Sample(int cycle) => (int)(cycle * SampleCycleRatio);

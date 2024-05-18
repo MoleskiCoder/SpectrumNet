@@ -109,7 +109,7 @@
 	    public override void Load(Board board)
         {
             base.Load(board);
-            board.ULA.UpdateBorder((this.Misc1() >> 1) & (int)EightBit.Mask.Mask3);
+            board.ULA.UpdateBorder((this.Misc1() >> 1) & (int)EightBit.Mask.Three);
         }
 
         protected override void LoadRegisters(EightBit.Z80 cpu)
@@ -127,7 +127,7 @@
             cpu.IV = this.Peek(Offset_I);
 
             cpu.REFRESH = this.Peek(Offset_R);
-            cpu.REFRESH &= (byte)((this.Misc1() & (byte)EightBit.Mask.Mask1) << 7);
+            cpu.REFRESH &= (byte)((this.Misc1() & (byte)EightBit.Mask.One) << 7);
 
             cpu.DE.Word = this.PeekWord(Offset_DE);
 
@@ -149,7 +149,7 @@
             cpu.IFF2 = this.Peek(Offset_IFF2) != 0;
 
             var misc2 = this.Peek(Offset_misc_2);
-            cpu.IM = misc2 & (byte)EightBit.Mask.Mask2;
+            cpu.IM = misc2 & (byte)EightBit.Mask.Two;
 
             cpu.Exx();
             cpu.ExxAF();

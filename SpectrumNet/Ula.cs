@@ -83,7 +83,7 @@
         public void RenderLine(int y)
         {
             // Vertical retrace
-            if ((y & (int)~Mask.Mask4) == 0)
+            if ((y & (int)~Mask.Four) == 0)
             {
                 if (y == 0)
                 {
@@ -94,13 +94,13 @@
             }
 
             // Upper border
-            else if ((y & (int)~Mask.Mask6) == 0)
+            else if ((y & (int)~Mask.Six) == 0)
             {
                 this.RenderBlankLine(y - VerticalRetraceLines);
             }
 
             // Rendered from Spectrum VRAM
-            else if ((y & (int)~Mask.Mask8) == 0)
+            else if ((y & (int)~Mask.Eight) == 0)
             {
                 this.RenderActiveLine(y - VerticalRetraceLines);
             }
@@ -139,7 +139,7 @@
         private int IncrementFrameCounter()
         {
 
-            if ((++this.frameCounter & (int)Mask.Mask4) == 0)
+            if ((++this.frameCounter & (int)Mask.Four) == 0)
             {
                 this.frameCounter = 0;
             }
@@ -241,7 +241,7 @@
             this.mic.Match(value & (byte)Bits.Bit3);
             this.speaker.Match(value & (byte)Bits.Bit4);
 
-            this.UpdateBorder(value & (byte)Mask.Mask3);
+            this.UpdateBorder(value & (byte)Mask.Three);
 
             this.BUS.Sound.Buzz(this.speaker, this.FrameCycles);
         }
@@ -300,8 +300,8 @@
                 var attributeAddress = attributeAddressY + currentByte;
                 var attribute = this.BUS.VRAM.Peek((ushort)attributeAddress);
 
-                var ink = attribute & (byte)Mask.Mask3;
-                var paper = (attribute >> 3) & (int)Mask.Mask3;
+                var ink = attribute & (byte)Mask.Three;
+                var paper = (attribute >> 3) & (int)Mask.Three;
                 var bright = (attribute & (byte)Bits.Bit6) != 0;
                 var flashing = (attribute & (byte)Bits.Bit7) != 0;
 
@@ -311,7 +311,7 @@
                 for (var bit = 0; bit < 8; ++bit)
                 {
                     var pixel = (bitmap & Bit(bit)) != 0;
-                    var x = (~bit & (int)Mask.Mask3) | (currentByte << 3);
+                    var x = (~bit & (int)Mask.Three) | (currentByte << 3);
 
                     this.Pixels[pixelBase + x] = pixel ? foreground : background;
 

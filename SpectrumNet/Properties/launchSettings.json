@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SpectrumNet": {
+      "commandName": "Project",
+      "workingDirectory": "C:\\github\\SpectrumNet"
+    }
+  }
+}

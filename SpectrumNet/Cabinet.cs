@@ -6,25 +6,26 @@
 
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
 
-    public sealed class Cabinet : Game
+    internal sealed class Cabinet : Game
     {
         private const int DisplayScale = 2;
         private const int DisplayWidth = Ula.RasterWidth;
         private const int DisplayHeight = Ula.RasterHeight;
 
-        private readonly ColorPalette palette = new ColorPalette();
+        private readonly ColorPalette palette = new();
 
-        private readonly List<Keys> pressedKeys = new List<Keys>();
-        private readonly Dictionary<PlayerIndex, GamePadButtons> pressedButtons = new Dictionary<PlayerIndex, GamePadButtons>();
-        private readonly Dictionary<PlayerIndex, GamePadDPad> pressedDPad = new Dictionary<PlayerIndex, GamePadDPad>();
+        private readonly List<Keys> pressedKeys = [];
+        private readonly Dictionary<PlayerIndex, GamePadButtons> pressedButtons = [];
+        private readonly Dictionary<PlayerIndex, GamePadDPad> pressedDPad = [];
 
         private readonly GraphicsDeviceManager graphics;
-        private SpriteBatch spriteBatch;
-        private Texture2D bitmapTexture;
+        private SpriteBatch? spriteBatch;
+        private Texture2D? bitmapTexture;
 
-        private bool disposed = false;
+        private bool disposed;
 
         public Cabinet(Configuration configuration)
         {
@@ -42,9 +43,9 @@
             this.pressedDPad[PlayerIndex.Two] = new GamePadDPad();
         }
 
-        public event EventHandler<EventArgs> Initializing;
+        public event EventHandler<EventArgs>? Initializing;
 
-        public event EventHandler<EventArgs> Initialized;
+        public event EventHandler<EventArgs>? Initialized;
 
         public Board Motherboard { get; }
 
@@ -122,10 +123,7 @@
             }
         }
 
-        private void CheckGamePads()
-        {
-            this.MaybeHandleGamePadOne();
-        }
+        private void CheckGamePads() => this.MaybeHandleGamePadOne();
 
         private void MaybeHandleGamePadOne()
         {
@@ -251,7 +249,9 @@
 
         private void DrawPixels()
         {
+            Debug.Assert(this.bitmapTexture is not null);
             this.bitmapTexture.SetData(this.Motherboard.ULA.Pixels);
+            Debug.Assert(this.spriteBatch is not null);
             this.spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
             this.spriteBatch.Draw(this.bitmapTexture, Vector2.Zero, null, Color.White, 0.0F, Vector2.Zero, DisplayScale, SpriteEffects.None, 0.0F);
             this.spriteBatch.End();

@@ -3,10 +3,8 @@
     using EightBit;
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Input;
-    using System;
-    using System.Collections.Generic;
 
-    public class Ula : EightBit.ClockedChip
+    internal class Ula : EightBit.ClockedChip
     {
         public const int VerticalRetraceLines = 16;
         public const int RasterWidth = (HorizontalRasterBorder * 2) + ActiveRasterWidth;
@@ -30,8 +28,8 @@
         private readonly ushort[] scanLineAddresses = new ushort[256];
         private readonly ushort[] attributeAddresses = new ushort[256];
         private readonly ColorPalette palette;
-        private bool flash = false;
-        private int frameCounter = 0;
+        private bool flash;
+        private int frameCounter;
         private Color borderColour;
 
         // Output port information
@@ -41,8 +39,8 @@
         // Input port information
         private EightBit.PinLevel ear = EightBit.PinLevel.Low; // Bit 6
 
-        private readonly Dictionary<byte, Keys[]> keyboardMapping = new Dictionary<byte, Keys[]>();
-        private readonly HashSet<Keys> keyboardRaw = new HashSet<Keys>();
+        private readonly Dictionary<byte, Keys[]> keyboardMapping = [];
+        private readonly HashSet<Keys> keyboardRaw = [];
 
         public Ula(ColorPalette palette, Board bus)
         {
@@ -68,7 +66,7 @@
             this.BUS.Ports.WrittenPort += this.Ports_WrittenPort;
         }
 
-        public event EventHandler<SteppingEventArgs> Proceed;
+        public event EventHandler<SteppingEventArgs>? Proceed;
 
         public static TimeSpan FrameLength => TimeSpan.FromSeconds(1 / FramesPerSecond);
 
@@ -76,7 +74,7 @@
 
         public Color[] Pixels { get; } = new Color[RasterWidth * RasterHeight];
 
-        private int FrameCycles { get; set; } = 0;
+        private int FrameCycles { get; set; }
 
         private Board BUS { get; }
 
@@ -129,7 +127,7 @@
             var available = this.Cycles / 2;
             if (available > 0)
             {
-                this.Proceed.Invoke(this, new SteppingEventArgs(available));
+                this.Proceed?.Invoke(this, new SteppingEventArgs(available));
                 this.FrameCycles += available;
                 this.ResetCycles();
             }
@@ -138,7 +136,6 @@
 
         private int IncrementFrameCounter()
         {
-
             if ((++this.frameCounter & (int)Mask.Four) == 0)
             {
                 this.frameCounter = 0;
@@ -150,16 +147,16 @@
         private void InitialiseKeyboardMapping()
         {
             // Left side
-            this.keyboardMapping[Bit(0)] = new Keys[] { Keys.LeftShift, Keys.Z,             Keys.X,         Keys.C,         Keys.V  };
-            this.keyboardMapping[Bit(1)] = new Keys[] { Keys.A,         Keys.S,             Keys.D,         Keys.F,         Keys.G  };
-            this.keyboardMapping[Bit(2)] = new Keys[] { Keys.Q,         Keys.W,             Keys.E,         Keys.R,         Keys.T  };
-            this.keyboardMapping[Bit(3)] = new Keys[] { Keys.D1,        Keys.D2,            Keys.D3,        Keys.D4,        Keys.D5 };
+            this.keyboardMapping[Bit(0)] = [Keys.LeftShift, Keys.Z,             Keys.X,         Keys.C,         Keys.V];
+            this.keyboardMapping[Bit(1)] = [Keys.A,         Keys.S,             Keys.D,         Keys.F,         Keys.G];
+            this.keyboardMapping[Bit(2)] = [Keys.Q,         Keys.W,             Keys.E,         Keys.R,         Keys.T];
+            this.keyboardMapping[Bit(3)] = [Keys.D1,        Keys.D2,            Keys.D3,        Keys.D4,        Keys.D5];
 
             // Right side
-            this.keyboardMapping[Bit(4)] = new Keys[] { Keys.D0,        Keys.D9,            Keys.D8,        Keys.D7,        Keys.D6 };
-            this.keyboardMapping[Bit(5)] = new Keys[] { Keys.P,         Keys.O,             Keys.I,         Keys.U,         Keys.Y  };
-            this.keyboardMapping[Bit(6)] = new Keys[] { Keys.Enter,     Keys.L,             Keys.K,         Keys.J,         Keys.H  };
-            this.keyboardMapping[Bit(7)] = new Keys[] { Keys.Space,     Keys.RightShift,    Keys.M,         Keys.N,         Keys.B  };
+            this.keyboardMapping[Bit(4)] = [Keys.D0,        Keys.D9,            Keys.D8,        Keys.D7,        Keys.D6];
+            this.keyboardMapping[Bit(5)] = [Keys.P,         Keys.O,             Keys.I,         Keys.U,         Keys.Y];
+            this.keyboardMapping[Bit(6)] = [Keys.Enter,     Keys.L,             Keys.K,         Keys.J,         Keys.H];
+            this.keyboardMapping[Bit(7)] = [Keys.Space,     Keys.RightShift,    Keys.M,         Keys.N,         Keys.B];
         }
 
         private byte FindSelectedKeys(byte rows)
@@ -320,8 +317,8 @@
             }
         }
 
-        private void Ports_ReadingPort(object sender, PortEventArgs e) => this.MaybeReadingPort(e.Port);
+        private void Ports_ReadingPort(object? sender, PortEventArgs e) => this.MaybeReadingPort(e.Port);
 
-        private void Ports_WrittenPort(object sender, PortEventArgs e) => this.MaybeWrittenPort(e.Port);
+        private void Ports_WrittenPort(object? sender, PortEventArgs e) => this.MaybeWrittenPort(e.Port);
     }
 }

@@ -2,7 +2,7 @@
 {
     using System;
 
-    public sealed class Z80File : SnapshotFile
+    internal sealed class Z80File(string path) : SnapshotFile(path)
     {
         private enum HardwareModeV2
         {
@@ -14,7 +14,7 @@
             Unknown = -1
         }
 
-        const int BlockSize = 0x4000;
+        private const int BlockSize = 0x4000;
 
         // V1 Header block
 
@@ -64,7 +64,7 @@
         private const int Offset_V2_PC = 32;
         private const int Offset_hardware_mode = 34;
 
-        private int version = 0;    // Illegal, by default!
+        private int version;    // Illegal, by default!
         private HardwareModeV2 hardwareModeV2 = HardwareModeV2.Unknown;
 
         protected override void ExamineHeaders()
@@ -85,34 +85,20 @@
             }
         }
 
-        public Z80File(string path)
-        : base(path)
+        private int HeaderSize => this.version switch
         {
-        }
+            1 => HeaderSizeV1,
+            2 => HeaderSizeV1 + this.PeekWord(Offset_length_additional_header_block) + 2,// Why +2 needed??
+            _ => throw new InvalidOperationException("Unknown Z80 file version"),
+        };
 
-        private int HeaderSize
-        {
-            get
-            {
-                switch (this.version)
-                {
-                    case 1:
-                        return HeaderSizeV1;
-                    case 2:
-                        return HeaderSizeV1 + this.PeekWord(Offset_length_additional_header_block) + 2; // Why +2 needed??
-                    default:
-                        throw new InvalidOperationException("Unknown Z80 file version");
-                }
-            }
-        }
-
-	    public override void Load(Board board)
+        public override void Load(Board board)
         {
             base.Load(board);
             board.ULA.UpdateBorder((this.Misc1() >> 1) & (int)EightBit.Mask.Three);
         }
 
-        protected override void LoadRegisters(EightBit.Z80 cpu)
+        protected override void LoadRegisters(Z80.Z80 cpu)
         {
             cpu.RaiseRESET();
 
@@ -174,6 +160,10 @@
                         case HardwareModeV2.FortyEightK_IF1:
                             this.LoadMemoryV2(board);
                             break;
+                        case HardwareModeV2.SamRam:
+                        case HardwareModeV2.OneTwentyEightK:
+                        case HardwareModeV2.OneTwentyEightK_IF1:
+                        case HardwareModeV2.Unknown:
                         default:
                             throw new InvalidOperationException("Only 48K ZX Spectrums are handled.");
                     }
@@ -187,7 +177,7 @@
         private byte Misc1()
         {
             var misc1 = this.Peek(Offset_misc_1);
-            return misc1 == 0xff ? (byte)1 : (byte)misc1;
+            return misc1 == 0xff ? (byte)1 : misc1;
         }
 
         private void LoadMemoryV1(Board board)
@@ -241,24 +231,14 @@
                 length = 0x4000;
             }
 
-            int convertedPage;
-            switch (page)
+            var convertedPage = page switch
             {
-                case 0: // 48K ROM!
-                    throw new InvalidOperationException("Cannot overwrite ROM from Z80 file!");
-                case 8: // 0x4000 - 0x7fff
-                    convertedPage = 1;
-                    break;
-                case 4: // 0x8000 - 0xbfff
-                    convertedPage = 2;
-                    break;
-                case 5: // 0xc000 - 0xffff
-                    convertedPage = 3;
-                    break;
-                default:
-                    throw new InvalidOperationException("Invalid page load detected!");
-            }
-
+                0 => throw new InvalidOperationException("Cannot overwrite ROM from Z80 file!"),    // 48K ROM!
+                8 => 1, // 0x4000 - 0x7fff
+                4 => 2, // 0x8000 - 0xbfff
+                5 => 3, // 0xc000 - 0xffff
+                _ => throw new InvalidOperationException("Invalid page load detected!"),
+            };
             var destination = (ushort)(convertedPage * BlockSize);
             if (uncompressed)
             {

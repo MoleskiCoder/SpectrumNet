@@ -1,6 +1,6 @@
 ﻿namespace SpectrumNet
 {
-    public class KempstonJoystick : Joystick
+    internal class KempstonJoystick : Joystick
     {
         private enum Switch
         {
@@ -36,7 +36,7 @@
 
         public override void ReleaseFire() => this.Reset(Switch.Fire);
 
-        private void Ports_ReadingPort(object sender, EightBit.PortEventArgs e)
+        private void Ports_ReadingPort(object? sender, EightBit.PortEventArgs e)
         {
             if (e.Port == 0x1f)
             {

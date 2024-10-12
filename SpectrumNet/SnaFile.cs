@@ -1,8 +1,6 @@
 ﻿namespace SpectrumNet
 {
-    using EightBit;
-
-    public class SnaFile : SnapshotFile
+    internal class SnaFile(string path) : SnapshotFile(path)
     {
         private const int Offset_I = 0x0;
         private const int Offset_HL_ = 0x1;
@@ -25,10 +23,6 @@
 
         private const int RamSize = (32 + 16) * 1024;
 
-        public SnaFile(string path)
-        : base(path)
-        { }
-
         public override void Load(Board board)
         {
             base.Load(board);
@@ -40,11 +34,11 @@
             board.Poke(0xfffe, 0xed);
             board.Poke(0xffff, 0x45);   // ED45 is RETN
             board.CPU.PC.Word = 0xfffe;
-            board.CPU.Step();
+            _ = board.CPU.Step();
             board.CPU.PokeWord(0xfffe, original);
         }
 
-        protected override void LoadRegisters(Z80 cpu)
+        protected override void LoadRegisters(Z80.Z80 cpu)
         {
             cpu.RaiseRESET();
 

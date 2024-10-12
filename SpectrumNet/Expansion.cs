@@ -1,16 +1,14 @@
 ﻿namespace SpectrumNet
 {
-    public abstract class Expansion : EightBit.Device
+    internal abstract class Expansion(Board motherboard) : EightBit.Device
     {
-        public enum Type
+        internal enum Type
         {
             Joystick
         }
 
-        public Expansion(Board motherboard) => this.BUS = motherboard;
-
         public abstract Type ExpansionType { get; }
 
-        protected Board BUS { get; }
+        protected Board BUS { get; } = motherboard;
     }
 }

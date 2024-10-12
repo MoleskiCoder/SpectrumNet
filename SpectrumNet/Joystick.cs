@@ -1,11 +1,7 @@
 ﻿namespace SpectrumNet
 {
-    public abstract class Joystick : Expansion
+    internal abstract class Joystick(Board board) : Expansion(board)
     {
-        protected Joystick(Board board)
-        : base(board)
-        { }
-
         public override Type ExpansionType => Type.Joystick;
 
         public abstract void PushUp();

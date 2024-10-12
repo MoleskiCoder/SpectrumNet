@@ -1,30 +1,27 @@
 ﻿namespace SpectrumNet
 {
-    using System;
-    using System.Collections.Generic;
-
-    public sealed class Board  : EightBit.Bus, IDisposable
+    internal sealed class Board : EightBit.Bus, IDisposable
     {
         private readonly Configuration configuration;
         private readonly ColorPalette palette;
-        private readonly List<Expansion> expansions = new List<Expansion>();
+        private readonly List<Expansion> expansions = [];
 
-        private readonly EightBit.Disassembler disassembler;
+        private readonly Z80.Disassembler disassembler;
 
-        private int allowed = 0;
+        private int allowed;
 
-        private bool disposed = false;
+        private bool disposed;
 
         public Board(ColorPalette palette, Configuration configuration)
         {
             this.palette = palette;
             this.configuration = configuration;
-            this.CPU = new EightBit.Z80(this, this.Ports);
+            this.CPU = new Z80.Z80(this, this.Ports);
             this.ULA = new Ula(this.palette, this);
-            this.disassembler = new EightBit.Disassembler(this);
+            this.disassembler = new Z80.Disassembler(this);
         }
 
-        public EightBit.Z80 CPU { get; }
+        public Z80.Z80 CPU { get; }
 
         public Ula ULA { get; }
 
@@ -150,11 +147,8 @@
             this.allowed -= taken;
         }
 
-        private void ULA_Proceed(object sender, SteppingEventArgs e) => this.RunCycles(e.Cycles);
+        private void ULA_Proceed(object? sender, SteppingEventArgs e) => this.RunCycles(e.Cycles);
 
-        private void CPU_ExecutingInstruction(object sender, System.EventArgs e)
-        {
-            System.Console.Error.WriteLine($"{EightBit.Disassembler.State(this.CPU)} {this.disassembler.Disassemble(this.CPU)}");
-        }
+        private void CPU_ExecutingInstruction(object? sender, System.EventArgs e) => System.Console.Error.WriteLine($"{Z80.Disassembler.State(this.CPU)} {this.disassembler.Disassemble(this.CPU)}");
     }
 }

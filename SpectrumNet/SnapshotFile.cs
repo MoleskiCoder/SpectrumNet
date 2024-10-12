@@ -2,15 +2,13 @@
 {
     using System;
 
-    public abstract class SnapshotFile
+    internal abstract class SnapshotFile(string path)
     {
-        private readonly string path;
+        private readonly string path = path;
 
         protected EightBit.Rom ROM { get; } = new EightBit.Rom();
 
         protected int Size => this.ROM.Size;
-
-        protected SnapshotFile(string path) => this.path = path;
 
         public virtual void Load(Board board)
         {
@@ -33,7 +31,7 @@
         {
         }
 
-        protected abstract void LoadRegisters(EightBit.Z80 cpu);
+        protected abstract void LoadRegisters(Z80.Z80 cpu);
 
         protected abstract void LoadMemory(Board board);
 

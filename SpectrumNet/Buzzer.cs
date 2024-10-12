@@ -5,17 +5,17 @@
     using System;
     using System.Runtime.InteropServices;
 
-    public class Buzzer : IDisposable
+    internal class Buzzer : IDisposable
     {
         private const int SampleRate = 44100;
         private const float SampleCycleRatio = SampleRate / (float)Ula.CyclesPerSecond;
 
         private readonly DynamicSoundEffectInstance sounds = new(SampleRate, AudioChannels.Mono);
         private readonly byte[] buffer;
-        private int lastSample = 0;
-        private short lastLevel = 0;
+        private int lastSample;
+        private short lastLevel;
 
-        private bool disposed = false;
+        private bool disposed;
 
         public Buzzer()
         {

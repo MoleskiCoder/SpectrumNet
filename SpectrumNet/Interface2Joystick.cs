@@ -2,7 +2,7 @@
 {
     using Microsoft.Xna.Framework.Input;
 
-    internal class Interface2Joystick(Board motherboard) : Joystick(motherboard)
+    internal sealed class Interface2Joystick(Board motherboard) : Joystick(motherboard)
     {
         public override void PushUp() => this.BUS.ULA.PokeKey(Keys.D4);
 

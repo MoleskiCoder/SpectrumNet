@@ -2,10 +2,8 @@
 {
     using System;
 
-    public class SteppingEventArgs : EventArgs
+    internal class SteppingEventArgs(int cycles) : EventArgs
     {
-        public SteppingEventArgs(int cycles) => this.Cycles = cycles;
-
-        public int Cycles { get; } = 0;
+        public int Cycles { get; } = cycles;
     }
 }

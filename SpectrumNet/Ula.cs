@@ -4,7 +4,7 @@
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Input;
 
-    internal class Ula : EightBit.ClockedChip
+    internal sealed class Ula : EightBit.ClockedChip
     {
         public const int VerticalRetraceLines = 16;
         public const int RasterWidth = (HorizontalRasterBorder * 2) + ActiveRasterWidth;

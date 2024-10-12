@@ -1,10 +1,10 @@
 ﻿namespace SpectrumNet
 {
-    public class Configuration
+    internal class Configuration
     {
-        public bool DebugMode { get; set; } = false;
+        public bool DebugMode { get; set; }
 
-        public bool ProfileMode { get; set; } = false;
+        public bool ProfileMode { get; set; }
 
         public bool DrawGraphics { get; set; } = true;
 

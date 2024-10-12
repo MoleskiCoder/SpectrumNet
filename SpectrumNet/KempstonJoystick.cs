@@ -1,6 +1,6 @@
 ﻿namespace SpectrumNet
 {
-    internal class KempstonJoystick : Joystick
+    internal sealed class KempstonJoystick : Joystick
     {
         private enum Switch
         {

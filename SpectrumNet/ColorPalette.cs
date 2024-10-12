@@ -2,9 +2,9 @@
 {
     using Microsoft.Xna.Framework;
 
-    public class ColorPalette
+    internal class ColorPalette
     {
-        public enum Index
+        internal enum Index
         {
             Black,
             Blue,
@@ -25,7 +25,7 @@
         }
 
         public Color GetColor(int index, bool bright) => this.GetColor(bright ? index + 8 : index);
- 
+
         public Color GetColor(Index index, bool bright) => this.GetColor((int)index, bright);
 
         public Color GetColor(int index) => this.colors[index];

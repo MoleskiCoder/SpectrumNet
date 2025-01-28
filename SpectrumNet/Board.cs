@@ -106,10 +106,7 @@
 
         public void RenderLines()
         {
-            for (var i = 0; i < Ula.TotalHeight; ++i)
-            {
-                this.ULA.RenderLine(i);
-            }
+            ULA.RenderLines();
         }
 
         public override EightBit.MemoryMapping Mapping(ushort absolute)
@@ -140,14 +137,13 @@
             }
         }
 
-        private void RunCycles(int suggested)
+        private void RunCycle()
         {
-            this.allowed += suggested;
-            var taken = this.CPU.Run(this.allowed);
+            var taken = this.CPU.Run(++this.allowed);
             this.allowed -= taken;
         }
 
-        private void ULA_Proceed(object? sender, SteppingEventArgs e) => this.RunCycles(e.Cycles);
+        private void ULA_Proceed(object? sender, EventArgs e) => this.RunCycle();
 
         private void CPU_ExecutingInstruction(object? sender, System.EventArgs e) => System.Console.Error.WriteLine($"{Z80.Disassembler.State(this.CPU)} {this.disassembler.Disassemble(this.CPU)}");
     }

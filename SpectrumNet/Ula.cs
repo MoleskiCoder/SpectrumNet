@@ -3,34 +3,46 @@
     using EightBit;
     using Microsoft.Xna.Framework;
     using Microsoft.Xna.Framework.Input;
+    using System;
 
     internal sealed class Ula : EightBit.ClockedChip
     {
-        public const int VerticalRetraceLines = 16;
-        public const int RasterWidth = (HorizontalRasterBorder * 2) + ActiveRasterWidth;
-        public const int RasterHeight = UpperRasterBorder + ActiveRasterHeight + LowerRasterBorder;
-        public const int TotalHeight = VerticalRetraceLines + RasterHeight;
+        private const int LeftRasterBorder = 32;
+        private const int RightRasterBorder = 64;
+        private const int TopRasterBorder = 56;
+        private const int BottomRasterBorder = 56;
 
-        public const int CyclesPerSecond = 3500000; // 3.5Mhz
-        public const float FramesPerSecond = 50.08f;
-
-        private const int UpperRasterBorder = 48;
-        private const int ActiveRasterHeight = 192;
-        private const int LowerRasterBorder = 56;
-
-        private const int HorizontalRasterBorder = 48;
         private const int ActiveRasterWidth = 256;
+        private const int ActiveRasterHeight = 192;
+
+        private const int HorizontalRetraceClocks = 96;
+        private const int VerticalRetraceLines = 8;
 
         private const int BytesPerLine = ActiveRasterWidth / 8;
-
         private const int AttributeAddress = 0x1800;
 
-        private readonly ushort[] scanLineAddresses = new ushort[256];
-        private readonly ushort[] attributeAddresses = new ushort[256];
+        public const float FramesPerSecond = 50.08f;
+        public const int UlaClockRate = 7000000; // 7Mhz
+        public const int CpuClockRate = UlaClockRate / 2; // 3.5Mhz
+
+        public const int RasterWidth = LeftRasterBorder + ActiveRasterWidth + RightRasterBorder;
+        public const int RasterHeight = TopRasterBorder + ActiveRasterHeight + BottomRasterBorder;
+
+        public const int TotalHeight = VerticalRetraceLines + RasterHeight;
+        public const int TotalHorizontalClocks = HorizontalRetraceClocks + RasterWidth;
+        public const int TotalFrameClocks = TotalHeight * TotalHorizontalClocks;
+        public const float CalculatedClockFrequency = TotalFrameClocks * FramesPerSecond;
+
+        private readonly int[] scanLineAddresses = new int[256];
+        private readonly int[] attributeAddresses = new int[256];
         private readonly ColorPalette palette;
-        private bool flash;
-        private int frameCounter;
+        private bool flashing;
+        private int frameCounter;   // 4 bits
+        private int verticalCounter; // 9 bits
+        private int horizontalCounter; // 9 bits
         private Color borderColour;
+        private int contention;
+        bool accessingVRAM;
 
         // Output port information
         private EightBit.PinLevel mic = EightBit.PinLevel.Low; // Bit 3
@@ -48,7 +60,62 @@
             this.BUS = bus ?? throw new ArgumentNullException(nameof(bus));
 
             this.InitialiseKeyboardMapping();
+            this.InitialiseVRAMAddresses();
 
+            this.BUS.CPU.LoweringRD += this.CPU_LoweringRD;
+            this.BUS.CPU.LoweringWR += this.CPU_LoweringWR;
+
+            this.BUS.Ports.ReadingPort += this.Ports_ReadingPort;
+            this.BUS.Ports.WrittenPort += this.Ports_WrittenPort;
+        }
+
+        private void CPU_LoweringWR(object? sender, EventArgs e)
+        {
+            this.MaybeContend();
+        }
+
+        private void CPU_LoweringRD(object? sender, EventArgs e)
+        {
+            this.MaybeContend();
+        }
+
+        private bool MaybeContend()
+        {
+	        return this.MaybeContend(this.BUS.Address.Word);
+        }
+
+        private bool MaybeContend(ushort address)
+        {
+	        bool hit = this.accessingVRAM && Contended(address);
+	        if (hit)
+                this.AddContention(3);
+	        return hit;
+        }
+
+        private static bool Contended(ushort address)
+        {
+	        // Contended area is between 0x4000 (0100000000000000)
+	        //						and  0x7fff (0111111111111111)
+	        var mask = (Bits.Bit15 | Bits.Bit14);
+            var masked = address & (ushort)mask;
+	        return masked == 0b0100000000000000;
+        }
+
+        private void AddContention(int cycles)
+        {
+	        this.contention += 2 * cycles;
+        }
+
+        private bool MaybeApplyContention()
+        {
+	        var apply = this.Contention > 0;
+	        if (apply)
+		        --this.contention;
+	        return apply;
+        }
+
+        private void InitialiseVRAMAddresses()
+        {
             var line = 0;
             for (var p = 0; p < 4; ++p)
             {
@@ -61,12 +128,9 @@
                     }
                 }
             }
-
-            this.BUS.Ports.ReadingPort += this.Ports_ReadingPort;
-            this.BUS.Ports.WrittenPort += this.Ports_WrittenPort;
         }
 
-        public event EventHandler<SteppingEventArgs>? Proceed;
+        public event EventHandler<EventArgs>? Proceed;
 
         public static TimeSpan FrameLength => TimeSpan.FromSeconds(1 / FramesPerSecond);
 
@@ -74,40 +138,159 @@
 
         public Color[] Pixels { get; } = new Color[RasterWidth * RasterHeight];
 
-        private int FrameCycles { get; set; }
+        private int Contention => this.contention;
+
+        private int FrameUlaCycles => TotalHorizontalClocks * this.V + this.C;
+        private int FrameCpuCycles => this.FrameUlaCycles / 2;
 
         private Board BUS { get; }
 
-        public void RenderLine(int y)
+        private int F => this.frameCounter;
+
+        private int V => this.verticalCounter;
+
+        private int C => this.horizontalCounter;
+
+        private void ProcessActiveLine()
         {
-            // Vertical retrace
-            if ((y & (int)~Mask.Four) == 0)
+            this.ProcessActiveLine(this.V + TopRasterBorder);
+        }
+
+        private void ProcessActiveLine(int y)
+        {
+            this.RenderVRAM(y);
+            this.RenderRightRasterBorder(y);
+            this.Tick(HorizontalRetraceClocks);
+            this.RenderLeftRasterBorder(y);
+        }
+
+        private void ProcessBottomBorder()
+        {
+            this.ProcessBorder(this.V + TopRasterBorder);
+        }
+
+        private void ProcessVerticalSync()
+        {
+            this.ProcessVerticalSync(this.V);
+        }
+
+        private void ProcessVerticalSync(int y)
+        {
+            if (y == (ActiveRasterHeight + BottomRasterBorder))
+                this.BUS.CPU.LowerINT();
+            this.Tick(ActiveRasterWidth);
+            this.Tick(RightRasterBorder);
+            this.Tick(HorizontalRetraceClocks);
+            this.Tick(LeftRasterBorder);
+        }
+
+        private void ProcessTopBorder()
+        {
+            this.ProcessBorder(this.V - VerticalRetraceLines - TopRasterBorder - ActiveRasterHeight);
+        }
+
+        private void ProcessBorder(int y)
+        {
+            this.RenderRasterBorder(LeftRasterBorder, y, ActiveRasterWidth);
+            this.RenderRightRasterBorder(y);
+            this.Tick(HorizontalRetraceClocks);
+            this.RenderLeftRasterBorder(y);
+        }
+
+        private void RenderLeftRasterBorder(int y)
+        {
+            this.RenderRasterBorder(0, y, LeftRasterBorder);
+        }
+
+        private void RenderRightRasterBorder(int y)
+        {
+            this.RenderRasterBorder(LeftRasterBorder + ActiveRasterWidth, y, RightRasterBorder);
+        }
+
+        private void RenderRasterBorder(int x, int y, int width)
+        {
+            // The ZX Spectrum ULA, Chris Smith
+            // Chapter 12 (Generating the Display), Border Generation
+            System.Diagnostics.Debug.Assert(x % 8 == 0);
+            System.Diagnostics.Debug.Assert(width % 8 == 0);
+            var chunks = width / 8;
+            var offset = y * RasterWidth + x;
+            for (int chunk = 0; chunk < chunks; ++chunk)
             {
-                if (y == 0)
+                var colour = this.borderColour;
+                for (int pixel = 0; pixel < 8; ++pixel)
                 {
-                    this.StartFrame();  // Start of vertical retrace
+                    this.SetClockedPixel(offset++, colour);
                 }
-
-                this.Tick(RasterWidth);
             }
+        }
 
-            // Upper border
-            else if ((y & (int)~Mask.Six) == 0)
+        public void RenderLine()
+        {
+            System.Diagnostics.Debug.Assert(this.C == 0);
+
+            if (this.V < ActiveRasterHeight)
+                this.ProcessActiveLine();
+
+            else if (this.V < (ActiveRasterHeight + BottomRasterBorder))
+                this.ProcessBottomBorder();
+
+            else if (this.V < (ActiveRasterHeight + BottomRasterBorder + VerticalRetraceLines))
+                this.ProcessVerticalSync();
+
+            else if (this.V < (RasterHeight + VerticalRetraceLines))
+                this.ProcessTopBorder();
+
+            System.Diagnostics.Debug.Assert(this.C == TotalHorizontalClocks);
+            this.IncrementV();
+        }
+
+        public void RenderLines()
+        {
+            System.Diagnostics.Debug.Assert(this.V == 0);
+            for (int i = 0; i < TotalHeight; ++i)
+                this.RenderLine();
+            System.Diagnostics.Debug.Assert(this.V == TotalHeight);
+            this.ResetV();
+            this.BUS.Sound.EndFrame();
+        }
+
+        private void ResetF()
+        {
+            this.frameCounter = 0;
+        }
+
+        private void IncrementF()
+        {
+            if ((++this.frameCounter & (int)Mask.Four) == 0)
             {
-                this.RenderBlankLine(y - VerticalRetraceLines);
+                this.frameCounter = 0;
+                this.Flash();
             }
+        }
 
-            // Rendered from Spectrum VRAM
-            else if ((y & (int)~Mask.Eight) == 0)
-            {
-                this.RenderActiveLine(y - VerticalRetraceLines);
-            }
+        private void ResetC()
+        {
+            this.horizontalCounter = 0;
+        }
 
-            // Lower border
-            else
-            {
-                this.RenderBlankLine(y - VerticalRetraceLines);
-            }
+        private void IncrementC()
+        {
+            if ((++this.horizontalCounter & (int)Mask.Nine) == 0)
+                this.horizontalCounter = 0;
+        }
+
+        private void ResetV()
+        {
+            this.verticalCounter = 0;
+            this.IncrementF();
+        }
+
+        private void IncrementV()
+        {
+            if ((++this.verticalCounter & (int)Mask.Nine) == 0)
+                this.verticalCounter = 0;
+            this.ResetC();
         }
 
         public void PokeKey(Keys raw) => this.keyboardRaw.Add(raw);
@@ -116,32 +299,23 @@
 
         protected override void OnRaisedPOWER()
         {
-            this.frameCounter = 0;
+            this.ResetF();
+            this.ResetV();
+            this.ResetC();
             this.UpdateBorder(0);
-            this.flash = false;
+            this.flashing = false;
             base.OnRaisedPOWER();
         }
 
         protected override void OnTicked()
         {
-            var available = this.Cycles / 2;
-            if (available > 0)
+            this.IncrementC();
+            if ((this.Cycles % 2) == 0)
             {
-                this.Proceed?.Invoke(this, new SteppingEventArgs(available));
-                this.FrameCycles += available;
-                this.ResetCycles();
+                if (!this.MaybeApplyContention())
+                    this.Proceed?.Invoke(this, EventArgs.Empty);
             }
             base.OnTicked();
-        }
-
-        private int IncrementFrameCounter()
-        {
-            if ((++this.frameCounter & (int)Mask.Four) == 0)
-            {
-                this.frameCounter = 0;
-            }
-
-            return this.frameCounter;
         }
 
         private void InitialiseKeyboardMapping()
@@ -240,54 +414,26 @@
 
             this.UpdateBorder(value & (byte)Mask.Three);
 
-            this.BUS.Sound.Buzz(this.speaker, this.FrameCycles);
+            this.BUS.Sound.Buzz(this.speaker, this.FrameCpuCycles);
         }
 
-        private void StartFrame()
-        {
-            this.BUS.Sound.EndFrame();
-            this.FrameCycles = 0;
-            if (this.IncrementFrameCounter() == 0)
-            {
-                this.Flash();
-            }
-
-            this.BUS.CPU.LowerINT();
-        }
-
-        private void Flash() => this.flash = !this.flash;
-
-        private void RenderBlankLine(int y) => this.RenderHorizontalBorder(0, y, RasterWidth);
-
-        private void RenderActiveLine(int y)
-        {
-            this.RenderLeftHorizontalBorder(y);
-            this.RenderVRAM(y - UpperRasterBorder);
-            this.RenderRightHorizontalBorder(y);
-        }
-
-        private void RenderLeftHorizontalBorder(int y) => this.RenderHorizontalBorder(0, y, HorizontalRasterBorder);
-
-        private void RenderRightHorizontalBorder(int y) => this.RenderHorizontalBorder(HorizontalRasterBorder + ActiveRasterWidth, y, HorizontalRasterBorder);
-
-        private void RenderHorizontalBorder(int x, int y, int width)
-        {
-            var begin = (y * RasterWidth) + x;
-            for (var i = 0; i < width; ++i)
-            {
-                this.Pixels[begin + i] = this.borderColour;
-                this.Tick();
-            }
-        }
+        private void Flash() => this.flashing = !this.flashing;
 
         private void RenderVRAM(int y)
         {
-            // Position in VRAM
-            var bitmapAddressY = this.scanLineAddresses[y];
-            var attributeAddressY = this.attributeAddresses[y];
+            System.Diagnostics.Debug.Assert(y >= 0);
+            System.Diagnostics.Debug.Assert(y < RasterHeight);
+
+            this.accessingVRAM = true;
+
+	        // Position in VRAM
+	        var addressY = y - TopRasterBorder;
+            System.Diagnostics.Debug.Assert(addressY<ActiveRasterHeight);
+            var bitmapAddressY = this.scanLineAddresses[addressY];
+            var attributeAddressY = this.attributeAddresses[addressY];
 
             // Position in pixel render 
-            var pixelBase = HorizontalRasterBorder + ((y + UpperRasterBorder) * RasterWidth);
+            var pixelBase = LeftRasterBorder + (y * RasterWidth);
 
             for (var currentByte = 0; currentByte < BytesPerLine; ++currentByte)
             {
@@ -302,19 +448,30 @@
                 var bright = (attribute & (byte)Bits.Bit6) != 0;
                 var flashing = (attribute & (byte)Bits.Bit7) != 0;
 
-                var background = this.palette.GetColor(flashing && this.flash ? ink : paper, bright);
-                var foreground = this.palette.GetColor(flashing && this.flash ? paper : ink, bright);
+                var background = this.palette.GetColor(flashing && this.flashing ? ink : paper, bright);
+                var foreground = this.palette.GetColor(flashing && this.flashing ? paper : ink, bright);
 
-                for (var bit = 0; bit < 8; ++bit)
+                var byteX = currentByte << 3;
+		        for (int bit = 0; bit< 8; ++bit)
                 {
                     var pixel = (bitmap & Bit(bit)) != 0;
-                    var x = (~bit & (int)Mask.Three) | (currentByte << 3);
+                    var x = (~bit & (int)Mask.Three) | byteX;
 
-                    this.Pixels[pixelBase + x] = pixel ? foreground : background;
-
-                    this.Tick();
+                    this.SetClockedPixel(pixelBase + x, pixel? foreground : background);
                 }
             }
+            this.accessingVRAM = false;
+        }
+
+        private void SetClockedPixel(int offset, Color colour)
+        {
+            this.SetPixel(offset, colour);
+            this.Tick();
+        }
+
+        private void SetPixel(int offset, Color colour)
+        {
+            this.Pixels[offset] = colour;
         }
 
         private void Ports_ReadingPort(object? sender, PortEventArgs e) => this.MaybeReadingPort(e.Port);

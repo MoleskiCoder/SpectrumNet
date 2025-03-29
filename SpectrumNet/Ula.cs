@@ -62,6 +62,10 @@
             this.InitialiseKeyboardMapping();
             this.InitialiseVRAMAddresses();
 
+            this.RaisedPOWER += this.Ula_RaisedPOWER;
+
+            this.Ticked += this.Ula_Ticked;
+
             this.BUS.CPU.LoweringRD += this.CPU_LoweringRD;
             this.BUS.CPU.LoweringWR += this.CPU_LoweringWR;
 
@@ -297,17 +301,16 @@
 
         public void PullKey(Keys raw) => this.keyboardRaw.Remove(raw);
 
-        protected override void OnRaisedPOWER()
+        private void Ula_RaisedPOWER(object? sender, EventArgs e)
         {
             this.ResetF();
             this.ResetV();
             this.ResetC();
             this.UpdateBorder(0);
             this.flashing = false;
-            base.OnRaisedPOWER();
         }
 
-        protected override void OnTicked()
+        private void Ula_Ticked(object? sender, EventArgs e)
         {
             this.IncrementC();
             if ((this.Cycles % 2) == 0)
@@ -315,7 +318,6 @@
                 if (!this.MaybeApplyContention())
                     this.Proceed?.Invoke(this, EventArgs.Empty);
             }
-            base.OnTicked();
         }
 
         private void InitialiseKeyboardMapping()

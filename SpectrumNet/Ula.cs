@@ -356,9 +356,9 @@
             return (byte)returned;
         }
 
-        private static bool UsedPort(byte port) => (port & (byte)EightBit.Bits.Bit0) == 0;
+        private static bool UsedPort(Register16 port) => (port.Low & (byte)EightBit.Bits.Bit0) == 0;
 
-        private void MaybeReadingPort(byte port)
+        private void MaybeReadingPort(Register16 port)
         {
             if (UsedPort(port))
             {
@@ -379,15 +379,15 @@
         //      -					Ear input
         //   -						Not used
 
-        private void ReadingPort(byte port)
+        private void ReadingPort(Register16 port)
         {
-            var portHigh = this.BUS.Address.High;
+            var portHigh = port.High;
             var selected = this.FindSelectedKeys((byte)~portHigh);
             var value = selected | (this.ear.Raised() ? Bit(6) : 0);
             this.BUS.Ports.WriteInputPort(port, (byte)value);
         }
 
-        private void MaybeWrittenPort(byte port)
+        private void MaybeWrittenPort(Register16 port)
         {
             if (UsedPort(port))
             {
@@ -407,7 +407,7 @@
         //            -				Beep output
         //   <----->				Not used
 
-        private void WrittenPort(byte port)
+        private void WrittenPort(Register16 port)
         {
             var value = this.BUS.Ports.ReadOutputPort(port);
 

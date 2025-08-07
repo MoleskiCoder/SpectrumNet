@@ -38,7 +38,7 @@
 
         private void Ports_ReadingPort(object? sender, EightBit.PortEventArgs e)
         {
-            if (e.Port == 0x1f)
+            if (e.Port.Low == 0x1f)
             {
                 this.BUS.Ports.WriteInputPort(e.Port, this.contents);
             }

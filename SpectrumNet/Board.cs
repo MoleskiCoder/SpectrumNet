@@ -53,6 +53,7 @@
             if (this.configuration.DebugMode)
             {
                 this.CPU.ExecutingInstruction += this.CPU_ExecutingInstruction;
+                this.CPU.ExecutedInstruction += this.CPU_ExecutedInstruction;
             }
         }
 
@@ -146,5 +147,7 @@
         private void ULA_Proceed(object? sender, EventArgs e) => this.RunCycle();
 
         private void CPU_ExecutingInstruction(object? sender, System.EventArgs e) => System.Console.Error.WriteLine($"{Z80.Disassembler.State(this.CPU)} {this.disassembler.Disassemble(this.CPU)}");
+
+        private void CPU_ExecutedInstruction(object? sender, EventArgs e) => this.CPU.RaiseRESET();
     }
 }

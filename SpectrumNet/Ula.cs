@@ -182,7 +182,11 @@
         {
             if (y == (ActiveRasterHeight + BottomRasterBorder))
                 this.BUS.CPU.LowerINT();
-            this.Tick(ActiveRasterWidth);
+
+            this.Tick(32);
+            this.BUS.CPU.RaiseINT();
+            this.Tick(ActiveRasterWidth-32);
+
             this.Tick(RightRasterBorder);
             this.Tick(HorizontalRetraceClocks);
             this.Tick(LeftRasterBorder);

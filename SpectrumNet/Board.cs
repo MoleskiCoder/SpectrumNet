@@ -1,4 +1,6 @@
-﻿namespace SpectrumNet
+﻿using System.Diagnostics;
+
+namespace SpectrumNet
 {
     internal sealed class Board : EightBit.Bus, IDisposable
     {
@@ -6,7 +8,7 @@
         private readonly ColorPalette palette;
         private readonly List<Expansion> expansions = [];
 
-        private readonly Z80.Disassembler disassembler;
+        private readonly Z80.Disassembler? disassembler;
 
         private int allowed;
 
@@ -18,7 +20,10 @@
             this.configuration = configuration;
             this.CPU = new Z80.Z80(this, this.Ports);
             this.ULA = new Ula(this.palette, this);
-            this.disassembler = new Z80.Disassembler(this);
+            if (this.configuration.DebugMode)
+            {
+                this.disassembler = new Z80.Disassembler(this);
+            }
         }
 
         public Z80.Z80 CPU { get; }
@@ -49,11 +54,11 @@
             this.Plug(romDirectory + "\\48.rom");	// ZX Spectrum Basic
 
             this.ULA.Proceed += this.ULA_Proceed;
+            this.CPU.ExecutedInstruction += this.CPU_ExecutedInstruction;
 
             if (this.configuration.DebugMode)
             {
                 this.CPU.ExecutingInstruction += this.CPU_ExecutingInstruction;
-                this.CPU.ExecutedInstruction += this.CPU_ExecutedInstruction;
             }
         }
 
@@ -146,8 +151,14 @@
 
         private void ULA_Proceed(object? sender, EventArgs e) => this.RunCycle();
 
-        private void CPU_ExecutingInstruction(object? sender, System.EventArgs e) => System.Console.Error.WriteLine($"{Z80.Disassembler.State(this.CPU)} {this.disassembler.Disassemble(this.CPU)}");
-
         private void CPU_ExecutedInstruction(object? sender, EventArgs e) => this.CPU.RaiseRESET();
+
+        private void CPU_ExecutingInstruction(object? sender, System.EventArgs e)
+        {
+            Debug.Assert(this.disassembler is not null, "Disassembler has not been initialized.");
+            var state = Z80.Disassembler.State(this.CPU);
+            var disassembly = this.disassembler.Disassemble(this.CPU);
+            System.Console.Error.WriteLine($"{state} {disassembly}");
+        }
     }
 }

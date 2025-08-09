@@ -18,6 +18,8 @@
         private const int HorizontalRetraceClocks = 96;
         private const int VerticalRetraceLines = 8;
 
+        private const int InterruptDuration = 64;   // 32 CPU cycles
+
         private const int BytesPerLine = ActiveRasterWidth / 8;
         private const int AttributeAddress = 0x1800;
 
@@ -183,9 +185,9 @@
             if (y == (ActiveRasterHeight + BottomRasterBorder))
                 this.BUS.CPU.LowerINT();
 
-            this.Tick(32);
+            this.Tick(InterruptDuration);
             this.BUS.CPU.RaiseINT();
-            this.Tick(ActiveRasterWidth-32);
+            this.Tick(ActiveRasterWidth - InterruptDuration);
 
             this.Tick(RightRasterBorder);
             this.Tick(HorizontalRetraceClocks);

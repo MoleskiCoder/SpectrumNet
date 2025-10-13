@@ -158,7 +158,7 @@ namespace SpectrumNet
             Debug.Assert(this.disassembler is not null, "Disassembler has not been initialized.");
             var state = Z80.Disassembler.State(this.CPU);
             var disassembly = this.disassembler.Disassemble(this.CPU);
-            System.Console.Error.WriteLine($"{state} {disassembly}");
+            System.Console.WriteLine($"{state} {disassembly}");
         }
     }
 }

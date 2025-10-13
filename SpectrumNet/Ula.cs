@@ -274,7 +274,7 @@
         {
             if ((++this.frameCounter & (int)Mask.Four) == 0)
             {
-                this.frameCounter = 0;
+                this.ResetF();
                 this.Flash();
             }
         }
@@ -287,7 +287,9 @@
         private void IncrementC()
         {
             if ((++this.horizontalCounter & (int)Mask.Nine) == 0)
-                this.horizontalCounter = 0;
+            {
+                this.ResetC();
+            }
         }
 
         private void ResetV()

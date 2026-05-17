@@ -16,7 +16,7 @@
         private readonly DynamicSoundEffectInstance sounds = new(AudioFrequency, AudioChannels.Mono);
         private readonly byte[] buffer;
         private int lastSample;
-        private short lastLevel;
+        private short lastLevel = LowLevel;
 
         private bool disposed;
 
@@ -30,6 +30,7 @@
             this.buffer = new byte[numberOfSampleBytes];
             this.sounds.Play();
         }
+
         private int NumberOfSamples => this.buffer.Length / 2;
 
         public void Dispose()
@@ -73,9 +74,9 @@
 
         private void FillBuffer(int from, int to, short value)
         {
-            var samples = MemoryMarshal.Cast<byte, short>(this.buffer);
+            var samples = MemoryMarshal.Cast<byte, short>(this.buffer.AsSpan());
             var section = samples[from..to];
-            //section.Fill(value);
+            section.Fill(value);
         }
 
         private static int Sample(int cycle) => (int)(cycle * SampleLength);

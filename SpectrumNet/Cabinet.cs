@@ -108,7 +108,6 @@
 
         protected override void Dispose(bool disposing)
         {
-            base.Dispose(disposing);
             if (!this.disposed)
             {
                 if (disposing)
@@ -121,6 +120,8 @@
 
                 this.disposed = true;
             }
+
+            base.Dispose(disposing);
         }
 
         private void CheckGamePads() => this.MaybeHandleGamePadOne();

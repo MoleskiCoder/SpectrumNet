@@ -1,29 +1,38 @@
-﻿using System.Diagnostics;
+﻿using EightBit;
+using System.Diagnostics;
 
 namespace SpectrumNet
 {
     internal sealed class Board : EightBit.Bus, IDisposable
     {
-        private readonly Configuration configuration;
-        private readonly ColorPalette palette;
-        private readonly List<Expansion> expansions = [];
+        private readonly Configuration _configuration;
+        private readonly ColorPalette _palette;
+        private readonly List<Expansion> _expansions = [];
 
-        private readonly Z80.Disassembler? disassembler;
+        private readonly Z80.Disassembler? _disassembler;
 
-        private int allowed;
+        private int _allowed;
 
-        private bool disposed;
+        private readonly EightBit.MemoryMapping _romMapping;
+        private readonly EightBit.MemoryMapping _vramMapping;
+        private readonly EightBit.MemoryMapping _wramMapping;
+
+        private bool _disposed;
 
         public Board(ColorPalette palette, Configuration configuration)
         {
-            this.palette = palette;
-            this.configuration = configuration;
+            this._palette = palette;
+            this._configuration = configuration;
             this.CPU = new Z80.Z80(this, this.Ports);
-            this.ULA = new Ula(this.palette, this);
-            if (this.configuration.DebugMode)
+            this.ULA = new Ula(this._palette, this);
+            if (this._configuration.DebugMode)
             {
-                this.disassembler = new Z80.Disassembler(this);
+                this._disassembler = new Z80.Disassembler(this);
             }
+
+            this._romMapping = new(this.ROM, 0x0000, 0xffff, EightBit.AccessLevel.ReadOnly);
+            this._vramMapping = new(this.VRAM, 0x4000, 0xffff, EightBit.AccessLevel.ReadWrite);
+            this._wramMapping = new(this.WRAM, 0x8000, 0xffff, EightBit.AccessLevel.ReadWrite);
         }
 
         public Z80.Z80 CPU { get; }
@@ -40,7 +49,7 @@ namespace SpectrumNet
 
         public EightBit.Ram WRAM { get; } = new EightBit.Ram(0x8000);
 
-        public int NumberOfExpansions => this.expansions.Count;
+        public int NumberOfExpansions => this._expansions.Count;
 
         public void Dispose()
         {
@@ -50,13 +59,13 @@ namespace SpectrumNet
 
         public override void Initialize()
         {
-            var romDirectory = this.configuration.RomDirectory;
+            var romDirectory = this._configuration.RomDirectory;
             this.Plug(romDirectory + "\\48.rom");	// ZX Spectrum Basic
 
             this.ULA.Proceed += this.ULA_Proceed;
             this.CPU.ExecutedInstruction += this.CPU_ExecutedInstruction;
 
-            if (this.configuration.DebugMode)
+            if (this._configuration.DebugMode)
             {
                 this.CPU.ExecutingInstruction += this.CPU_ExecutingInstruction;
             }
@@ -66,7 +75,7 @@ namespace SpectrumNet
         {
             base.RaisePOWER();
 
-            foreach (var expansion in this.expansions)
+            foreach (var expansion in this._expansions)
             {
                 expansion.RaisePOWER();
             }
@@ -83,7 +92,7 @@ namespace SpectrumNet
             this.CPU.LowerPOWER();
             this.ULA.LowerPOWER();
 
-            foreach (var expansion in this.expansions)
+            foreach (var expansion in this._expansions)
             {
                 expansion.LowerPOWER();
             }
@@ -91,9 +100,9 @@ namespace SpectrumNet
             base.LowerPOWER();
         }
 
-        public void Plug(Expansion expansion) => this.expansions.Add(expansion);
+        public void Plug(Expansion expansion) => this._expansions.Add(expansion);
 
-        public Expansion Expansion(int i) => this.expansions[i];
+        public Expansion Expansion(int i) => this._expansions[i];
 
         public void Plug(string path) => this.ROM.Load(path);
 
@@ -118,34 +127,34 @@ namespace SpectrumNet
         {
             if (absolute < 0x4000)
             {
-                return new EightBit.MemoryMapping(this.ROM, 0x0000, 0xffff, EightBit.AccessLevel.ReadOnly);
+                return this._romMapping;
             }
 
             if (absolute < 0x8000)
             {
-                return new EightBit.MemoryMapping(this.VRAM, 0x4000, 0xffff, EightBit.AccessLevel.ReadWrite);
+                return this._vramMapping;
             }
 
-            return new EightBit.MemoryMapping(this.WRAM, 0x8000, 0xffff, EightBit.AccessLevel.ReadWrite);
+            return this._wramMapping;
         }
 
         private void Dispose(bool disposing)
         {
-            if (!this.disposed)
+            if (!this._disposed)
             {
                 if (disposing)
                 {
                     this.Sound.Dispose();
                 }
 
-                this.disposed = true;
+                this._disposed = true;
             }
         }
 
         private void RunCycle()
         {
-            var taken = this.CPU.Run(++this.allowed);
-            this.allowed -= taken;
+            var taken = this.CPU.Run(++this._allowed);
+            this._allowed -= taken;
         }
 
         private void ULA_Proceed(object? sender, EventArgs e) => this.RunCycle();
@@ -154,9 +163,9 @@ namespace SpectrumNet
 
         private void CPU_ExecutingInstruction(object? sender, System.EventArgs e)
         {
-            Debug.Assert(this.disassembler is not null, "Disassembler has not been initialized.");
+            Debug.Assert(this._disassembler is not null, "Disassembler has not been initialized.");
             var state = Z80.Disassembler.State(this.CPU);
-            var disassembly = this.disassembler.Disassemble(this.CPU);
+            var disassembly = this._disassembler.Disassemble(this.CPU);
             System.Console.WriteLine($"{state} {disassembly}");
         }
     }

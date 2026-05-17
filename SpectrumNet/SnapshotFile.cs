@@ -40,11 +40,11 @@
         protected byte Peek(ushort offset) => this.ROM.Peek(offset);
 
         // Assumed to be little-endian!
-        protected ushort PeekWord(ushort offset)
+        protected ushort PeekShort(ushort offset)
         {
             var low = this.Peek(offset++);
             var high = this.Peek(offset);
-            return EightBit.Chip.MakeWord(low, high);
+            return EightBit.Chip.MakeShort(low, high);
         }
     }
 }

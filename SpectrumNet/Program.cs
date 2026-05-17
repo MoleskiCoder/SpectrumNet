@@ -4,7 +4,7 @@ using SpectrumNet;
 var configuration = new Configuration();
 
 #if DEBUG
-            configuration.DebugMode = true;
+configuration.DebugMode = true;
 #endif
 
 using (var computer = new Cabinet(configuration))
@@ -28,10 +28,10 @@ static void Computer_Initialized(object? sender, EventArgs e)
     //computer.Plug(romDirectory + "\\G9R_ROM.bin");	// Space Raiders (Space Invaders)
     //computer.Plug(romDirectory + "\\Jet Pac (1983)(Sinclair Research)(GB).rom");	// Jet Pac
 
-    computer.Plug(romDirectory + "\\System_Test_ROM.bin");  // Sinclair test ROM by Dr. Ian Logan
-                                                            //computer.Plug(romDirectory + "\\Release-v0.37\\testrom.bin");
-                                                            //computer.Plug(romDirectory + "\\smart\\ROMs\\DiagROM.v41");
-                                                            //computer.Plug(romDirectory + "\\DiagROMv.171");
+    //computer.Plug(romDirectory + "\\System_Test_ROM.bin");  // Sinclair test ROM by Dr. Ian Logan
+    //computer.Plug(romDirectory + "\\Release-v0.37\\testrom.bin");
+    //computer.Plug(romDirectory + "\\smart\\ROMs\\DiagROM.v41");
+    computer.Plug(romDirectory + "\\diagrom\\DiagROMv.171");
 
 
     var programDirectory = configuration.ProgramDirectory;

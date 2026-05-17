@@ -87,7 +87,7 @@
 
         private bool MaybeContend()
         {
-	        return this.MaybeContend(this.BUS.Address.Word);
+	        return this.MaybeContend(this.BUS.Address.Joined);
         }
 
         private bool MaybeContend(ushort address)

@@ -74,7 +74,6 @@ namespace SpectrumNet
             this.ULA.RaisePOWER();
             this.CPU.RaisePOWER();
             this.CPU.LowerRESET();
-            this.CPU.RaiseHALT();
             this.CPU.RaiseINT();
             this.CPU.RaiseNMI();
         }

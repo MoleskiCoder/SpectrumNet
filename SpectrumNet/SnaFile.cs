@@ -30,12 +30,12 @@
             board.ULA.UpdateBorder(this.Peek(Offset_BorderColour));
 
             // XXXX HACK, HACK, HACK!!
-            var original = board.CPU.PeekWord(0xfffe);
+            var original = board.CPU.PeekShort(0xfffe);
             board.Poke(0xfffe, 0xed);
             board.Poke(0xffff, 0x45);   // ED45 is RETN
-            board.CPU.PC.Word = 0xfffe;
+            board.CPU.PC.Joined = 0xfffe;
             _ = board.CPU.Step();
-            board.CPU.PokeWord(0xfffe, original);
+            board.CPU.PokeShort(0xfffe, original);
         }
 
         protected override void LoadRegisters(Z80.Z80 cpu)
@@ -44,27 +44,26 @@
 
             cpu.IV = this.Peek(Offset_I);
 
-            cpu.HL.Word = this.PeekWord(Offset_HL_);
-            cpu.DE.Word = this.PeekWord(Offset_DE_);
-            cpu.BC.Word = this.PeekWord(Offset_BC_);
-            cpu.AF.Word = this.PeekWord(Offset_AF_);
+            cpu.HL.Joined = this.PeekShort(Offset_HL_);
+            cpu.DE.Joined = this.PeekShort(Offset_DE_);
+            cpu.BC.Joined = this.PeekShort(Offset_BC_);
+            cpu.AF.Joined = this.PeekShort(Offset_AF_);
 
             cpu.Exx();
 
-            cpu.HL.Word = this.PeekWord(Offset_HL);
-            cpu.DE.Word = this.PeekWord(Offset_DE);
-            cpu.BC.Word = this.PeekWord(Offset_BC);
+            cpu.HL.Joined = this.PeekShort(Offset_HL);
+            cpu.DE.Joined = this.PeekShort(Offset_DE);
+            cpu.BC.Joined = this.PeekShort(Offset_BC);
 
-            cpu.IY.Word = this.PeekWord(Offset_IY);
-            cpu.IX.Word = this.PeekWord(Offset_IX);
-
+            cpu.IY.Joined = this.PeekShort(Offset_IY);
+            cpu.IX.Joined = this.PeekShort(Offset_IX);
             cpu.IFF2 = (this.Peek(Offset_IFF2) >> 2) != 0;
             cpu.REFRESH = this.Peek(Offset_R);
 
             cpu.ExxAF();
 
-            cpu.AF.Word = this.PeekWord(Offset_AF);
-            cpu.SP.Word = this.PeekWord(Offset_SP);
+            cpu.AF.Joined = this.PeekShort(Offset_AF);
+            cpu.SP.Joined = this.PeekShort(Offset_SP);
             cpu.IM = this.Peek(Offset_IM);
         }
 

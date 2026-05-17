@@ -69,10 +69,10 @@
 
         protected override void ExamineHeaders()
         {
-            switch (this.PeekWord(Offset_PC))
+            switch (this.PeekShort(Offset_PC))
             {
                 case 0:
-                    this.version = this.PeekWord(Offset_length_additional_header_block) == 23 ? 2 : 3;
+                    this.version = this.PeekShort(Offset_length_additional_header_block) == 23 ? 2 : 3;
                     if (this.version == 2)
                     {
                         this.hardwareModeV2 = (HardwareModeV2)this.Peek(Offset_hardware_mode);
@@ -88,7 +88,7 @@
         private int HeaderSize => this.version switch
         {
             1 => HeaderSizeV1,
-            2 => HeaderSizeV1 + this.PeekWord(Offset_length_additional_header_block) + 2,// Why +2 needed??
+            2 => HeaderSizeV1 + this.PeekShort(Offset_length_additional_header_block) + 2,// Why +2 needed??
             _ => throw new InvalidOperationException("Unknown Z80 file version"),
         };
 
@@ -105,31 +105,31 @@
             cpu.A = this.Peek(Offset_A);
             cpu.F = this.Peek(Offset_F);
 
-            cpu.BC.Word = this.PeekWord(Offset_BC);
-            cpu.HL.Word = this.PeekWord(Offset_HL);
-            cpu.PC.Word = this.PeekWord(Offset_PC); // Only valid for V1
-            cpu.SP.Word = this.PeekWord(Offset_SP);
+            cpu.BC.Joined = this.PeekShort(Offset_BC);
+            cpu.HL.Joined = this.PeekShort(Offset_HL);
+            cpu.PC.Joined = this.PeekShort(Offset_PC); // Only valid for V1
+            cpu.SP.Joined = this.PeekShort(Offset_SP);
 
             cpu.IV = this.Peek(Offset_I);
 
             cpu.REFRESH = this.Peek(Offset_R);
             cpu.REFRESH &= (byte)((this.Misc1() & (byte)EightBit.Mask.One) << 7);
 
-            cpu.DE.Word = this.PeekWord(Offset_DE);
+            cpu.DE.Joined = this.PeekShort(Offset_DE);
 
             cpu.Exx();
 
-            cpu.BC.Word = this.PeekWord(Offset_BC_);
-            cpu.DE.Word = this.PeekWord(Offset_DE_);
-            cpu.HL.Word = this.PeekWord(Offset_HL_);
+            cpu.BC.Joined = this.PeekShort(Offset_BC_);
+            cpu.DE.Joined = this.PeekShort(Offset_DE_);
+            cpu.HL.Joined = this.PeekShort(Offset_HL_);
 
             cpu.ExxAF();
 
             cpu.A = this.Peek(Offset_A_);
             cpu.F = this.Peek(Offset_F_);
 
-            cpu.IY.Word = this.PeekWord(Offset_IY);
-            cpu.IX.Word = this.PeekWord(Offset_IX);
+            cpu.IY.Joined = this.PeekShort(Offset_IY);
+            cpu.IX.Joined = this.PeekShort(Offset_IX);
 
             cpu.IFF1 = this.Peek(Offset_IFF1) != 0;
             cpu.IFF2 = this.Peek(Offset_IFF2) != 0;
@@ -142,7 +142,7 @@
 
             if (this.version > 1)
             {
-                cpu.PC.Word = this.PeekWord(Offset_V2_PC);
+                cpu.PC.Joined = this.PeekShort(Offset_V2_PC);
             }
         }
 
@@ -223,7 +223,7 @@
             var offsetPage = (ushort)(offsetLength + 2);
             var offsetBlock = (ushort)(offsetPage + 1);
 
-            var length = this.PeekWord(offsetLength);
+            var length = this.PeekShort(offsetLength);
             var page = this.Peek(offsetPage);
             var uncompressed = length == 0xffff;
             if (uncompressed)

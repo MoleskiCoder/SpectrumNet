@@ -75,7 +75,7 @@
         {
             var samples = MemoryMarshal.Cast<byte, short>(this.buffer);
             var section = samples[from..to];
-            section.Fill(value);
+            //section.Fill(value);
         }
 
         private static int Sample(int cycle) => (int)(cycle * SampleLength);

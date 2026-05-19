@@ -24,6 +24,7 @@
         private readonly GraphicsDeviceManager graphics;
         private SpriteBatch? spriteBatch;
         private Texture2D? bitmapTexture;
+        private Effect? crtEffect;
 
         private bool disposed;
 
@@ -31,6 +32,7 @@
         {
             this.Settings = configuration;
             this.Motherboard = new Board(this.palette, configuration);
+            this.Content.RootDirectory = "Content";
 
             this.graphics = new GraphicsDeviceManager(this)
             {
@@ -62,6 +64,17 @@
         private void OnInitializing() => this.Initializing?.Invoke(this, EventArgs.Empty);
 
         private void OnInitialized() => this.Initialized?.Invoke(this, EventArgs.Empty);
+
+        protected override void LoadContent()
+        {
+            base.LoadContent();
+            this.crtEffect = this.Content.Load<Effect>("Shaders/crt");
+            this.crtEffect.Parameters["OutputSize"]?.SetValue(new Vector2(DisplayWidth * DisplayScale, DisplayHeight * DisplayScale));
+            this.crtEffect.Parameters["ScanlineStrength"]?.SetValue(0.40f);
+            this.crtEffect.Parameters["PhosphorStrength"]?.SetValue(0.70f);
+            this.crtEffect.Parameters["BarrelDistortion"]?.SetValue(0.12f);
+            this.crtEffect.Parameters["VignetteStrength"]?.SetValue(0.30f);
+        }
 
         protected override void Initialize()
         {
@@ -113,6 +126,7 @@
                 if (disposing)
                 {
                     this.Motherboard?.Dispose();
+                    this.crtEffect?.Dispose();
                     this.bitmapTexture?.Dispose();
                     this.spriteBatch?.Dispose();
                     this.graphics?.Dispose();
@@ -252,8 +266,15 @@
         {
             Debug.Assert(this.bitmapTexture is not null);
             this.bitmapTexture.SetData(this.Motherboard.ULA.Pixels);
+
+            var viewport = this.GraphicsDevice.Viewport;
+            var matrixTransform = Matrix.CreateOrthographicOffCenter(0, viewport.Width, viewport.Height, 0, 0, -1);
+
+            Debug.Assert(this.crtEffect is not null);
+            this.crtEffect.Parameters["MatrixTransform"].SetValue(matrixTransform);
+
             Debug.Assert(this.spriteBatch is not null);
-            this.spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
+            this.spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.LinearClamp, null, null, this.crtEffect);
             this.spriteBatch.Draw(this.bitmapTexture, Vector2.Zero, null, Color.White, 0.0F, Vector2.Zero, DisplayScale, SpriteEffects.None, 0.0F);
             this.spriteBatch.End();
         }

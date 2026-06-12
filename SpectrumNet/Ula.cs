@@ -445,29 +445,27 @@
             // Position in pixel render 
             var pixelBase = LeftRasterBorder + (y * RasterWidth);
 
+            var bitmapAddress = bitmapAddressY;
+            var attributeAddress = attributeAddressY;
+
             for (var currentByte = 0; currentByte < BytesPerLine; ++currentByte)
             {
-                var bitmapAddress = bitmapAddressY + currentByte;
-                var bitmap = this.BUS.VRAM.Peek((ushort)bitmapAddress);
-
-                var attributeAddress = attributeAddressY + currentByte;
-                var attribute = this.BUS.VRAM.Peek((ushort)attributeAddress);
-
+                var attribute = this.BUS.VRAM.Peek((ushort)attributeAddress++);
                 var ink = attribute & (byte)Mask.Three;
                 var paper = (attribute >> 3) & (int)Mask.Three;
                 var bright = (attribute & (byte)Bits.Bit6) != 0;
                 var flashing = (attribute & (byte)Bits.Bit7) != 0;
-
                 var background = this.palette.GetColor(flashing && this.flashing ? ink : paper, bright);
                 var foreground = this.palette.GetColor(flashing && this.flashing ? paper : ink, bright);
 
+                var bitmap = this.BUS.VRAM.Peek((ushort)bitmapAddress++);
                 var byteX = currentByte << 3;
 		        for (int bit = 0; bit< 8; ++bit)
                 {
                     var pixel = (bitmap & Bit(bit)) != 0;
                     var x = (~bit & (int)Mask.Three) | byteX;
 
-                    this.SetClockedPixel(pixelBase + x, pixel? foreground : background);
+                    this.SetClockedPixel(pixelBase + x, pixel ? foreground : background);
                 }
             }
             this.accessingVRAM = false;

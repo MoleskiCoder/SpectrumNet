@@ -61,6 +61,8 @@
 
         public void LoadZ80(string path) => this.Motherboard.LoadZ80(path);
 
+        public void InsertTape(string path) => this.Motherboard.InsertTape(path);
+
         private void OnInitializing() => this.Initializing?.Invoke(this, EventArgs.Empty);
 
         private void OnInitialized() => this.Initialized?.Invoke(this, EventArgs.Empty);

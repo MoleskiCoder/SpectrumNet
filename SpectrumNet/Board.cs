@@ -5,11 +5,16 @@ namespace SpectrumNet
 {
     internal sealed class Board : EightBit.Bus, IDisposable
     {
+        // 48K ROM LD-BYTES entry point, trapped for instant tape loading
+        private const ushort LdBytesAddress = 0x0556;
+
         private readonly Configuration _configuration;
         private readonly ColorPalette _palette;
         private readonly List<Expansion> _expansions = [];
 
         private readonly Z80.Disassembler? _disassembler;
+
+        private TapeFile? _tape;
 
         private int _allowed;
 
@@ -118,6 +123,28 @@ namespace SpectrumNet
             z80.Load(this);
         }
 
+        public void InsertTape(string path)
+        {
+            var tape = TapeFile.Create(path);
+            tape.Read();
+            if (this._tape is null)
+            {
+                this.CPU.ExecutingInstruction += this.CPU_CheckTapeTrap;
+            }
+
+            this._tape = tape;
+        }
+
+        public void EjectTape()
+        {
+            if (this._tape is not null)
+            {
+                this.CPU.ExecutingInstruction -= this.CPU_CheckTapeTrap;
+            }
+
+            this._tape = null;
+        }
+
         public void RenderLines()
         {
             ULA.RenderLines();
@@ -158,6 +185,52 @@ namespace SpectrumNet
         }
 
         private void ULA_Proceed(object? sender, EventArgs e) => this.RunCycle();
+
+        private void CPU_CheckTapeTrap(object? sender, EventArgs e)
+        {
+            if (this.CPU.PC.Joined == LdBytesAddress)
+            {
+                this.LoadTapeBlock();
+            }
+        }
+
+        private void LoadTapeBlock()
+        {
+            Debug.Assert(this._tape is not null, "No tape has been inserted.");
+
+            // LD-BYTES entry conditions: A = expected flag byte, carry set
+            // for LOAD (reset for VERIFY), IX = destination, DE = length.
+            var requested = this.CPU.DE.Joined;
+            var destination = this.CPU.IX.Joined;
+            var loading = this.CPU.Carry() != 0;
+
+            var success = false;
+            if (this._tape.TryNextBlock(out var block) && (block.Length >= 2) && (block[0] == this.CPU.A))
+            {
+                var available = block.Length - 2;   // Exclude the flag and checksum bytes
+                var count = Math.Min(requested, available);
+                if (loading)
+                {
+                    for (var i = 0; i < count; ++i)
+                    {
+                        this.Poke((ushort)(destination + i), block[1 + i]);
+                    }
+                }
+
+                this.CPU.IX.Joined = (ushort)(destination + count);
+                this.CPU.DE.Joined = (ushort)(requested - count);
+                success = count == requested;
+            }
+
+            if (success)
+                this.CPU.SetBit(Z80.StatusBits.CF);
+            else
+                this.CPU.ClearBit(Z80.StatusBits.CF);
+
+            // Emulate LD-BYTES' RET back to its caller
+            this.CPU.PC.Joined = this.CPU.PeekShort(this.CPU.SP.Joined).Joined;
+            this.CPU.SP.Joined += 2;
+        }
 
         private void CPU_ExecutedInstruction(object? sender, EventArgs e) => this.CPU.RaiseRESET();
 

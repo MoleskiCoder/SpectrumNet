@@ -35,30 +35,30 @@
         public const int TotalFrameClocks = TotalHeight * TotalHorizontalClocks;
         public const float CalculatedClockFrequency = TotalFrameClocks * FramesPerSecond;
 
-        private readonly int[] scanLineAddresses = new int[256];
-        private readonly int[] attributeAddresses = new int[256];
-        private readonly ColorPalette palette;
-        private bool flashing;
-        private int frameCounter;   // 4 bits
-        private int verticalCounter; // 9 bits
-        private int horizontalCounter; // 9 bits
-        private Color borderColour;
-        private int contention;
-        bool accessingVRAM;
+        private readonly int[] _scanLineAddresses = new int[256];
+        private readonly int[] _attributeAddresses = new int[256];
+        private readonly ColorPalette _palette;
+        private bool _flashing;
+        private int _frameCounter;   // 4 bits
+        private int _verticalCounter; // 9 bits
+        private int _horizontalCounter; // 9 bits
+        private Color _borderColour;
+        private int _contention;
+        bool _accessingVRAM;
 
         // Output port information
-        private EightBit.PinLevel mic = EightBit.PinLevel.Low; // Bit 3
-        private EightBit.PinLevel speaker = EightBit.PinLevel.Low; // Bit 4
+        private EightBit.PinLevel _mic = EightBit.PinLevel.Low; // Bit 3
+        private EightBit.PinLevel _speaker = EightBit.PinLevel.Low; // Bit 4
 
         // Input port information
-        private EightBit.PinLevel ear = EightBit.PinLevel.Low; // Bit 6
+        private EightBit.PinLevel _ear = EightBit.PinLevel.Low; // Bit 6
 
-        private readonly Dictionary<byte, Keys[]> keyboardMapping = [];
-        private readonly HashSet<Keys> keyboardRaw = [];
+        private readonly Dictionary<byte, Keys[]> _keyboardMapping = [];
+        private readonly HashSet<Keys> _keyboardRaw = [];
 
         public Ula(ColorPalette palette, Board bus)
         {
-            this.palette = palette ?? throw new ArgumentNullException(nameof(palette));
+            this._palette = palette ?? throw new ArgumentNullException(nameof(palette));
             this.BUS = bus ?? throw new ArgumentNullException(nameof(bus));
 
             this.InitialiseKeyboardMapping();
@@ -75,24 +75,15 @@
             this.BUS.Ports.WrittenPort += this.Ports_WrittenPort;
         }
 
-        private void CPU_LoweringWR(object? sender, EventArgs e)
-        {
-            this.MaybeContend();
-        }
+        private void CPU_LoweringWR(object? sender, EventArgs e) => this.MaybeContend();
 
-        private void CPU_LoweringRD(object? sender, EventArgs e)
-        {
-            this.MaybeContend();
-        }
+        private void CPU_LoweringRD(object? sender, EventArgs e) => this.MaybeContend();
 
-        private bool MaybeContend()
-        {
-	        return this.MaybeContend(this.BUS.Address.Joined);
-        }
+        private bool MaybeContend() => this.MaybeContend(this.BUS.Address.Joined);
 
         private bool MaybeContend(ushort address)
         {
-	        bool hit = this.accessingVRAM && Contended(address);
+	        bool hit = this._accessingVRAM && Contended(address);
 	        if (hit)
                 this.AddContention(3);
 	        return hit;
@@ -109,14 +100,14 @@
 
         private void AddContention(int cycles)
         {
-	        this.contention += 2 * cycles;
+	        this._contention += 2 * cycles;
         }
 
         private bool MaybeApplyContention()
         {
 	        var apply = this.Contention > 0;
 	        if (apply)
-		        --this.contention;
+		        --this._contention;
 	        return apply;
         }
 
@@ -129,8 +120,8 @@
                 {
                     for (var o = 0; o < 8; ++o, ++line)
                     {
-                        this.scanLineAddresses[line] = (ushort)((p << 11) + (y << 5) + (o << 8));
-                        this.attributeAddresses[line] = (ushort)(AttributeAddress + (((p << 3) + y) << 5));
+                        this._scanLineAddresses[line] = (ushort)((p << 11) + (y << 5) + (o << 8));
+                        this._attributeAddresses[line] = (ushort)(AttributeAddress + (((p << 3) + y) << 5));
                     }
                 }
             }
@@ -140,27 +131,24 @@
 
         public static TimeSpan FrameLength => TimeSpan.FromSeconds(1 / FramesPerSecond);
 
-        public void UpdateBorder(int value) => this.borderColour = this.palette.GetColor(value, false);
+        public void UpdateBorder(int value) => this._borderColour = this._palette.GetColor(value, false);
 
         public Color[] Pixels { get; } = new Color[RasterWidth * RasterHeight];
 
-        private int Contention => this.contention;
+        private int Contention => this._contention;
 
         private int FrameUlaCycles => TotalHorizontalClocks * this.V + this.C;
         private int FrameCpuCycles => this.FrameUlaCycles / 2;
 
         private Board BUS { get; }
 
-        private int F => this.frameCounter;
+        private ref int F => ref this._frameCounter;
 
-        private int V => this.verticalCounter;
+        private ref int V => ref this._verticalCounter;
 
-        private int C => this.horizontalCounter;
+        private ref int C => ref this._horizontalCounter;
 
-        private void ProcessActiveLine()
-        {
-            this.ProcessActiveLine(this.V + TopRasterBorder);
-        }
+        private void ProcessActiveLine() => this.ProcessActiveLine(this.V + TopRasterBorder);
 
         private void ProcessActiveLine(int y)
         {
@@ -170,15 +158,9 @@
             this.RenderLeftRasterBorder(y);
         }
 
-        private void ProcessBottomBorder()
-        {
-            this.ProcessBorder(this.V + TopRasterBorder);
-        }
+        private void ProcessBottomBorder() => this.ProcessBorder(this.V + TopRasterBorder);
 
-        private void ProcessVerticalSync()
-        {
-            this.ProcessVerticalSync(this.V);
-        }
+        private void ProcessVerticalSync() => this.ProcessVerticalSync(this.V);
 
         private void ProcessVerticalSync(int y)
         {
@@ -207,15 +189,9 @@
             this.RenderLeftRasterBorder(y);
         }
 
-        private void RenderLeftRasterBorder(int y)
-        {
-            this.RenderRasterBorder(0, y, LeftRasterBorder);
-        }
+        private void RenderLeftRasterBorder(int y) => this.RenderRasterBorder(0, y, LeftRasterBorder);
 
-        private void RenderRightRasterBorder(int y)
-        {
-            this.RenderRasterBorder(LeftRasterBorder + ActiveRasterWidth, y, RightRasterBorder);
-        }
+        private void RenderRightRasterBorder(int y) => this.RenderRasterBorder(LeftRasterBorder + ActiveRasterWidth, y, RightRasterBorder);
 
         private void RenderRasterBorder(int x, int y, int width)
         {
@@ -227,7 +203,7 @@
             var offset = y * RasterWidth + x;
             for (int chunk = 0; chunk < chunks; ++chunk)
             {
-                var colour = this.borderColour;
+                var colour = this._borderColour;
                 for (int pixel = 0; pixel < 8; ++pixel)
                 {
                     this.SetClockedPixel(offset++, colour);
@@ -265,62 +241,43 @@
             this.BUS.Sound.EndFrame();
         }
 
-        private void ResetF()
-        {
-            this.frameCounter = 0;
-        }
-
         private void IncrementF()
         {
-            if ((++this.frameCounter & (int)Mask.Four) == 0)
+            if ((++this.F & (int)Mask.Four) == 0)
             {
-                this.ResetF();
+                this.F = 0;
                 this.Flash();
-            }
-        }
-
-        private void ResetC()
-        {
-            this.horizontalCounter = 0;
-        }
-
-        private void IncrementC()
-        {
-            if ((++this.horizontalCounter & (int)Mask.Nine) == 0)
-            {
-                this.ResetC();
             }
         }
 
         private void ResetV()
         {
-            this.verticalCounter = 0;
+            this.V = 0;
             this.IncrementF();
         }
 
         private void IncrementV()
         {
-            if ((++this.verticalCounter & (int)Mask.Nine) == 0)
-                this.verticalCounter = 0;
-            this.ResetC();
+            ++this.V;
+            this.C = 0;
         }
 
-        public void PokeKey(Keys raw) => this.keyboardRaw.Add(raw);
+        public void PokeKey(Keys raw) => this._keyboardRaw.Add(raw);
 
-        public void PullKey(Keys raw) => this.keyboardRaw.Remove(raw);
+        public void PullKey(Keys raw) => this._keyboardRaw.Remove(raw);
 
         private void Ula_RaisedPOWER(object? sender, EventArgs e)
         {
-            this.ResetF();
+            this.F = 0;
             this.ResetV();
-            this.ResetC();
+            this.C = 0;
             this.UpdateBorder(0);
-            this.flashing = false;
+            this._flashing = false;
         }
 
         private void Ula_Ticked(object? sender, EventArgs e)
         {
-            this.IncrementC();
+            ++this.C;
             if ((this.Cycles % 2) == 0)
             {
                 if (!this.MaybeApplyContention())
@@ -331,16 +288,16 @@
         private void InitialiseKeyboardMapping()
         {
             // Left side
-            this.keyboardMapping[Bit(0)] = [Keys.LeftShift, Keys.Z,             Keys.X,         Keys.C,         Keys.V];
-            this.keyboardMapping[Bit(1)] = [Keys.A,         Keys.S,             Keys.D,         Keys.F,         Keys.G];
-            this.keyboardMapping[Bit(2)] = [Keys.Q,         Keys.W,             Keys.E,         Keys.R,         Keys.T];
-            this.keyboardMapping[Bit(3)] = [Keys.D1,        Keys.D2,            Keys.D3,        Keys.D4,        Keys.D5];
+            this._keyboardMapping[Bit(0)] = [Keys.LeftShift, Keys.Z,             Keys.X,         Keys.C,         Keys.V];
+            this._keyboardMapping[Bit(1)] = [Keys.A,         Keys.S,             Keys.D,         Keys.F,         Keys.G];
+            this._keyboardMapping[Bit(2)] = [Keys.Q,         Keys.W,             Keys.E,         Keys.R,         Keys.T];
+            this._keyboardMapping[Bit(3)] = [Keys.D1,        Keys.D2,            Keys.D3,        Keys.D4,        Keys.D5];
 
             // Right side
-            this.keyboardMapping[Bit(4)] = [Keys.D0,        Keys.D9,            Keys.D8,        Keys.D7,        Keys.D6];
-            this.keyboardMapping[Bit(5)] = [Keys.P,         Keys.O,             Keys.I,         Keys.U,         Keys.Y];
-            this.keyboardMapping[Bit(6)] = [Keys.Enter,     Keys.L,             Keys.K,         Keys.J,         Keys.H];
-            this.keyboardMapping[Bit(7)] = [Keys.Space,     Keys.RightShift,    Keys.M,         Keys.N,         Keys.B];
+            this._keyboardMapping[Bit(4)] = [Keys.D0,        Keys.D9,            Keys.D8,        Keys.D7,        Keys.D6];
+            this._keyboardMapping[Bit(5)] = [Keys.P,         Keys.O,             Keys.I,         Keys.U,         Keys.Y];
+            this._keyboardMapping[Bit(6)] = [Keys.Enter,     Keys.L,             Keys.K,         Keys.J,         Keys.H];
+            this._keyboardMapping[Bit(7)] = [Keys.Space,     Keys.RightShift,    Keys.M,         Keys.N,         Keys.B];
         }
 
         private byte FindSelectedKeys(byte rows)
@@ -349,11 +306,11 @@
             for (var row = 0; row < 8; ++row)
             {
                 var current = Bit(row);
-                if (((rows & current) != 0) && this.keyboardMapping.TryGetValue(current, out var keys))
+                if (((rows & current) != 0) && this._keyboardMapping.TryGetValue(current, out var keys))
                 {
                     for (var column = 0; column < 5; ++column)
                     {
-                        if (this.keyboardRaw.Contains(keys[column]))
+                        if (this._keyboardRaw.Contains(keys[column]))
                         {
                             returned &= ~Bit(column);
                         }
@@ -391,7 +348,7 @@
         {
             var portHigh = port.High;
             var selected = this.FindSelectedKeys((byte)~portHigh);
-            var value = selected | (this.ear.Raised() ? Bit(6) : 0);
+            var value = selected | (this._ear.Raised() ? Bit(6) : 0);
             this.BUS.Ports.WriteInputPort(port, (byte)value);
         }
 
@@ -419,28 +376,28 @@
         {
             var value = this.BUS.Ports.ReadOutputPort(port);
 
-            this.mic.Match(value & (byte)Bits.Bit3);
-            this.speaker.Match(value & (byte)Bits.Bit4);
+            this._mic.Match(value & (byte)Bits.Bit3);
+            this._speaker.Match(value & (byte)Bits.Bit4);
 
             this.UpdateBorder(value & (byte)Mask.Three);
 
-            this.BUS.Sound.Buzz(this.speaker, this.FrameCpuCycles);
+            this.BUS.Sound.Buzz(this._speaker, this.FrameCpuCycles);
         }
 
-        private void Flash() => this.flashing = !this.flashing;
+        private void Flash() => this._flashing = !this._flashing;
 
         private void RenderVRAM(int y)
         {
             System.Diagnostics.Debug.Assert(y >= 0);
             System.Diagnostics.Debug.Assert(y < RasterHeight);
 
-            this.accessingVRAM = true;
+            this._accessingVRAM = true;
 
 	        // Position in VRAM
 	        var addressY = y - TopRasterBorder;
             System.Diagnostics.Debug.Assert(addressY<ActiveRasterHeight);
-            var bitmapAddressY = this.scanLineAddresses[addressY];
-            var attributeAddressY = this.attributeAddresses[addressY];
+            var bitmapAddressY = this._scanLineAddresses[addressY];
+            var attributeAddressY = this._attributeAddresses[addressY];
 
             // Position in pixel render 
             var pixelBase = LeftRasterBorder + (y * RasterWidth);
@@ -455,8 +412,8 @@
                 var paper = (attribute >> 3) & (int)Mask.Three;
                 var bright = (attribute & (byte)Bits.Bit6) != 0;
                 var flashing = (attribute & (byte)Bits.Bit7) != 0;
-                var background = this.palette.GetColor(flashing && this.flashing ? ink : paper, bright);
-                var foreground = this.palette.GetColor(flashing && this.flashing ? paper : ink, bright);
+                var background = this._palette.GetColor(flashing && this._flashing ? ink : paper, bright);
+                var foreground = this._palette.GetColor(flashing && this._flashing ? paper : ink, bright);
 
                 var bitmap = this.BUS.VRAM.Peek((ushort)bitmapAddress++);
                 var byteX = currentByte << 3;
@@ -468,7 +425,7 @@
                     this.SetClockedPixel(pixelBase + x, pixel ? foreground : background);
                 }
             }
-            this.accessingVRAM = false;
+            this._accessingVRAM = false;
         }
 
         private void SetClockedPixel(int offset, Color colour)
@@ -477,10 +434,7 @@
             this.Tick();
         }
 
-        private void SetPixel(int offset, Color colour)
-        {
-            this.Pixels[offset] = colour;
-        }
+        private void SetPixel(int offset, Color colour) => this.Pixels[offset] = colour;
 
         private void Ports_ReadingPort(object? sender, PortEventArgs e) => this.MaybeReadingPort(e.Port);
 

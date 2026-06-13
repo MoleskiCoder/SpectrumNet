@@ -245,9 +245,14 @@
         {
             if ((++this.F & (int)Mask.Four) == 0)
             {
-                this.F = 0;
-                this.Flash();
+                this.ResetF();
             }
+        }
+
+        private void ResetF()
+        {
+            this.F = 0;
+            this.Flash();
         }
 
         private void ResetV()
@@ -268,7 +273,7 @@
 
         private void Ula_RaisedPOWER(object? sender, EventArgs e)
         {
-            this.F = 0;
+            this.ResetF();
             this.ResetV();
             this.C = 0;
             this.UpdateBorder(0);

@@ -198,28 +198,25 @@ namespace SpectrumNet
         {
             Debug.Assert(this._tape is not null, "No tape has been inserted.");
 
-            // LD-BYTES entry conditions: A = expected flag byte, carry set
-            // for LOAD (reset for VERIFY), IX = destination, DE = length.
-            var requested = this.CPU.DE.Joined;
-            var destination = this.CPU.IX.Joined;
-            var loading = this.CPU.Carry() != 0;
+            // LD-BYTES entry conditions:
+            // * A = expected flag byte, carry set for LOAD (reset for VERIFY)
+            // * IX = destination
+            // * DE = length.
 
             var success = false;
             if (this._tape.TryNextBlock(out var block) && (block.Length >= 2) && (block[0] == this.CPU.A))
             {
                 var available = block.Length - 2;   // Exclude the flag and checksum bytes
-                var count = Math.Min(requested, available);
-                if (loading)
+                var requested = this.CPU.DE.Joined;
+                success = available >= requested;
+                var loading = this.CPU.Carry() != 0;
+                if (success && loading)
                 {
-                    for (var i = 0; i < count; ++i)
+                    for (var i = 0; i < requested; ++i)
                     {
-                        this.Poke((ushort)(destination + i), block[1 + i]);
+                        this.Poke(this.CPU.IX.Joined++, block[1 + i]);
                     }
                 }
-
-                this.CPU.IX.Joined = (ushort)(destination + count);
-                this.CPU.DE.Joined = (ushort)(requested - count);
-                success = count == requested;
             }
 
             if (success)
@@ -228,8 +225,7 @@ namespace SpectrumNet
                 this.CPU.ClearBit(Z80.StatusBits.CF);
 
             // Emulate LD-BYTES' RET back to its caller
-            this.CPU.PC.Joined = this.CPU.PeekShort(this.CPU.SP.Joined).Joined;
-            this.CPU.SP.Joined += 2;
+            this.CPU.Return();
         }
 
         private void CPU_ExecutedInstruction(object? sender, EventArgs e) => this.CPU.RaiseRESET();

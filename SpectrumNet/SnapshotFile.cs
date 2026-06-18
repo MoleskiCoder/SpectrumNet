@@ -1,50 +1,49 @@
 ﻿namespace SpectrumNet
 {
+    using EightBit;
     using System;
 
-    internal abstract class SnapshotFile(string path)
+    internal abstract class SnapshotFile(string path, Board bus)
     {
-        private readonly string path = path;
+        private readonly string _path = path;
 
         protected EightBit.Rom ROM { get; } = new EightBit.Rom();
 
+        protected Board BUS { get; } = bus;
+
+        protected Z80.Z80 CPU => this.BUS.CPU;
+
         protected int Size => this.ROM.Size;
 
-        public virtual void Load(Board board)
+        public virtual void Load()
         {
             this.Read();
 
             // N.B. Power must be raised prior to loading
             // registers, otherwise power on defaults will override
             // loaded values.
-            if (!board.CPU.Powered)
+            if (!this.CPU.Powered)
             {
                 throw new InvalidOperationException("Whoops: CPU has not been powered on.");
             }
 
             this.ExamineHeaders();
-            this.LoadRegisters(board.CPU);
-            this.LoadMemory(board);
+            this.LoadRegisters();
+            this.LoadMemory();
         }
 
         protected virtual void ExamineHeaders()
         {
         }
 
-        protected abstract void LoadRegisters(Z80.Z80 cpu);
+        protected abstract void LoadRegisters();
 
-        protected abstract void LoadMemory(Board board);
+        protected abstract void LoadMemory();
 
-        protected void Read() => this.ROM.Load(this.path);
+        protected void Read() => this.ROM.Load(this._path);
 
         protected byte Peek(ushort offset) => this.ROM.Peek(offset);
 
-        // Assumed to be little-endian!
-        protected ushort PeekShort(ushort offset)
-        {
-            var low = this.Peek(offset++);
-            var high = this.Peek(offset);
-            return EightBit.Chip.MakeShort(low, high);
-        }
+        protected Register16 PeekShort(ushort offset) => this.CPU.PeekShort(offset);
     }
 }

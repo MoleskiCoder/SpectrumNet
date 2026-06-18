@@ -2,7 +2,7 @@
 {
     using System;
 
-    internal sealed class Z80File(string path) : SnapshotFile(path)
+    internal sealed class Z80File(string path, Board bus) : SnapshotFile(path, bus)
     {
         private enum HardwareModeV2
         {
@@ -69,10 +69,10 @@
 
         protected override void ExamineHeaders()
         {
-            switch (this.PeekShort(Offset_PC))
+            switch (this.PeekShort(Offset_PC).Joined)
             {
                 case 0:
-                    this._version = this.PeekShort(Offset_length_additional_header_block) == 23 ? 2 : 3;
+                    this._version = this.PeekShort(Offset_length_additional_header_block).Joined == 23 ? 2 : 3;
                     if (this._version == 2)
                     {
                         this._hardwareModeV2 = (HardwareModeV2)this.Peek(Offset_hardware_mode);
@@ -88,77 +88,77 @@
         private int HeaderSize => this._version switch
         {
             1 => HeaderSizeV1,
-            2 => HeaderSizeV1 + this.PeekShort(Offset_length_additional_header_block) + 2,// Why +2 needed??
+            2 => HeaderSizeV1 + this.PeekShort(Offset_length_additional_header_block).Joined + 2,// Why +2 needed??
             _ => throw new InvalidOperationException("Unknown Z80 file version"),
         };
 
-        public override void Load(Board board)
+        public override void Load()
         {
-            base.Load(board);
-            board.ULA.UpdateBorder((this.Misc1() >> 1) & (int)EightBit.Mask.Three);
+            base.Load();
+            this.BUS.ULA.UpdateBorder((this.Misc1() >> 1) & (int)EightBit.Mask.Three);
         }
 
-        protected override void LoadRegisters(Z80.Z80 cpu)
+        protected override void LoadRegisters()
         {
-            cpu.RaiseRESET();
+            this.CPU.RaiseRESET();
 
-            cpu.A = this.Peek(Offset_A);
-            cpu.F = this.Peek(Offset_F);
+            this.CPU.A = this.Peek(Offset_A);
+            this.CPU.F = this.Peek(Offset_F);
 
-            cpu.BC.Joined = this.PeekShort(Offset_BC);
-            cpu.HL.Joined = this.PeekShort(Offset_HL);
-            cpu.PC.Joined = this.PeekShort(Offset_PC); // Only valid for V1
-            cpu.SP.Joined = this.PeekShort(Offset_SP);
+            this.CPU.BC.Assign(this.PeekShort(Offset_BC));
+            this.CPU.HL.Assign(this.PeekShort(Offset_HL));
+            this.CPU.PC.Assign(this.PeekShort(Offset_PC)); // Only valid for V1
+            this.CPU.SP.Assign(this.PeekShort(Offset_SP));
 
-            cpu.IV = this.Peek(Offset_I);
+            this.CPU.IV = this.Peek(Offset_I);
 
-            cpu.REFRESH = this.Peek(Offset_R);
-            cpu.REFRESH &= (byte)((this.Misc1() & (byte)EightBit.Mask.One) << 7);
+            this.CPU.REFRESH = this.Peek(Offset_R);
+            this.CPU.REFRESH &= (byte)((this.Misc1() & (byte)EightBit.Mask.One) << 7);
 
-            cpu.DE.Joined = this.PeekShort(Offset_DE);
+            this.CPU.DE.Assign(this.PeekShort(Offset_DE));
 
-            cpu.Exx();
+            this.CPU.Exx();
 
-            cpu.BC.Joined = this.PeekShort(Offset_BC_);
-            cpu.DE.Joined = this.PeekShort(Offset_DE_);
-            cpu.HL.Joined = this.PeekShort(Offset_HL_);
+            this.CPU.BC.Assign(this.PeekShort(Offset_BC_));
+            this.CPU.DE.Assign(this.PeekShort(Offset_DE_));
+            this.CPU.HL.Assign(this.PeekShort(Offset_HL_));
 
-            cpu.ExxAF();
+            this.CPU.ExxAF();
 
-            cpu.A = this.Peek(Offset_A_);
-            cpu.F = this.Peek(Offset_F_);
+            this.CPU.A = this.Peek(Offset_A_);
+            this.CPU.F = this.Peek(Offset_F_);
 
-            cpu.IY.Joined = this.PeekShort(Offset_IY);
-            cpu.IX.Joined = this.PeekShort(Offset_IX);
+            this.CPU.IY.Assign(this.PeekShort(Offset_IY));
+            this.CPU.IX.Assign(this.PeekShort(Offset_IX));
 
-            cpu.IFF1 = this.Peek(Offset_IFF1) != 0;
-            cpu.IFF2 = this.Peek(Offset_IFF2) != 0;
+            this.CPU.IFF1 = this.Peek(Offset_IFF1) != 0;
+            this.CPU.IFF2 = this.Peek(Offset_IFF2) != 0;
 
             var misc2 = this.Peek(Offset_misc_2);
-            cpu.IM = misc2 & (byte)EightBit.Mask.Two;
+            this.CPU.IM = misc2 & (byte)EightBit.Mask.Two;
 
-            cpu.Exx();
-            cpu.ExxAF();
+            this.CPU.Exx();
+            this.CPU.ExxAF();
 
             if (this._version > 1)
             {
-                cpu.PC.Joined = this.PeekShort(Offset_V2_PC);
+                this.CPU.PC.Assign(this.PeekShort(Offset_V2_PC));
             }
         }
 
-        protected override void LoadMemory(Board board)
+        protected override void LoadMemory()
         {
             switch (this._version)
             {
                 case 1:
-                    this.LoadMemoryV1(board);
+                    this.LoadMemoryV1();
                     break;
                 case 2:
                     switch (this._hardwareModeV2)
                     {
                         case HardwareModeV2.FortyEightK:
                         case HardwareModeV2.FortyEightK_IF1:
-                            this.LoadMemoryV2(board);
+                            this.LoadMemoryV2();
                             break;
                         case HardwareModeV2.SamRam:
                         case HardwareModeV2.OneTwentyEightK:
@@ -180,42 +180,42 @@
             return misc1 == 0xff ? (byte)1 : misc1;
         }
 
-        private void LoadMemoryV1(Board board)
+        private void LoadMemoryV1()
         {
             System.Diagnostics.Debug.WriteLine("LoadMemoryV1");
 
             var compressed = (this.Misc1() & (byte)EightBit.Bits.Bit5) != 0;
             if (compressed)
             {
-                this.LoadMemoryCompressedV1(board, (ushort)this.HeaderSize);
+                this.LoadMemoryCompressedV1((ushort)this.HeaderSize);
             }
             else
             {
-                this.LoadMemoryUncompressed(board, (ushort)this.HeaderSize);
+                this.LoadMemoryUncompressed((ushort)this.HeaderSize);
             }
         }
 
-        private void LoadMemoryCompressedV1(Board board, ushort offset)
+        private void LoadMemoryCompressedV1(ushort offset)
         {
             System.Diagnostics.Debug.WriteLine($"LoadMemoryCompressedV1: offset={offset}");
 
-            var position = board.ROM.Size;
+            var position = this.BUS.ROM.Size;
             var fileSize = this.Size - offset - 2;
-            this.LoadCompressedBlock(board, offset, (ushort)position, (ushort)fileSize);
+            this.LoadCompressedBlock(offset, (ushort)position, (ushort)fileSize);
         }
 
-        private void LoadMemoryV2(Board board)
+        private void LoadMemoryV2()
         {
             System.Diagnostics.Debug.WriteLine("LoadMemoryV2");
 
             var position = (ushort)this.HeaderSize;
             while (position < this.Size)
             {
-                position += this.LoadMemoryBlock(board, position);
+                position += this.LoadMemoryBlock(position);
             }
         }
 
-        private ushort LoadMemoryBlock(Board board, ushort offset)
+        private ushort LoadMemoryBlock(ushort offset)
         {
             System.Diagnostics.Debug.WriteLine($"LoadMemoryBlock: offset={offset}");
 
@@ -223,7 +223,7 @@
             var offsetPage = (ushort)(offsetLength + 2);
             var offsetBlock = (ushort)(offsetPage + 1);
 
-            var length = this.PeekShort(offsetLength);
+            var length = this.PeekShort(offsetLength).Joined;
             var page = this.Peek(offsetPage);
             var uncompressed = length == 0xffff;
             if (uncompressed)
@@ -242,47 +242,47 @@
             var destination = (ushort)(convertedPage * BlockSize);
             if (uncompressed)
             {
-                this.LoadUncompressedBlock(board, offsetBlock, destination, length);
+                this.LoadUncompressedBlock(offsetBlock, destination, length);
             }
             else
             {
-                this.LoadCompressedBlock(board, offsetBlock, destination, length);
+                this.LoadCompressedBlock(offsetBlock, destination, length);
             }
 
             return (ushort)(length + 3);
         }
 
-        private void LoadMemoryUncompressed(Board board, ushort offset)
+        private void LoadMemoryUncompressed(ushort offset)
         {
             System.Diagnostics.Debug.WriteLine($"LoadMemoryUncompressed: offset={offset}");
 
             var position = offset;
             for (var block = 1; block < 4; ++block)
             {
-                this.LoadMemoryUncompressed(board, position, block);
+                this.LoadMemoryUncompressed(position, block);
                 position += BlockSize;
             }
         }
 
-        private void LoadMemoryUncompressed(Board board, ushort offset, int block)
+        private void LoadMemoryUncompressed(ushort offset, int block)
         {
             System.Diagnostics.Debug.WriteLine($"LoadMemoryUncompressed: offset={offset}, block={block}");
 
             var start = (ushort)(block * BlockSize);
-            this.LoadUncompressedBlock(board, offset, start, BlockSize);
+            this.LoadUncompressedBlock(offset, start, BlockSize);
         }
 
-        private void LoadUncompressedBlock(Board board, ushort source, ushort destination, ushort length)
+        private void LoadUncompressedBlock(ushort source, ushort destination, ushort length)
         {
             System.Diagnostics.Debug.WriteLine($"LoadUncompressedBlock: source={source}, destination={destination:x4}, length={length:x4}");
 
             for (ushort i = 0; i < length; ++i)
             {
-                board.Poke(destination++, this.Peek(source++));
+                this.BUS.Poke(destination++, this.Peek(source++));
             }
         }
 
-        private void LoadCompressedBlock(Board board, ushort source, ushort destination, ushort length)
+        private void LoadCompressedBlock(ushort source, ushort destination, ushort length)
         {
             System.Diagnostics.Debug.WriteLine($"LoadCompressedBlock: source={source}, destination={destination:x4}, length={length:x4}");
 
@@ -297,14 +297,14 @@
                     --destination;
                     for (var j = 0; j < repeats; ++j)
                     {
-                        board.Poke(destination++, value);
+                        this.BUS.Poke(destination++, value);
                     }
 
                     previous = 0x100;
                 }
                 else
                 {
-                    board.Poke(destination++, current);
+                    this.BUS.Poke(destination++, current);
                     previous = current;
                 }
             }

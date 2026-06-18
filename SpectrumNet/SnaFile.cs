@@ -1,6 +1,6 @@
 ﻿namespace SpectrumNet
 {
-    internal class SnaFile(string path) : SnapshotFile(path)
+    internal class SnaFile(string path, Board bus) : SnapshotFile(path, bus)
     {
         private const int Offset_I = 0x0;
         private const int Offset_HL_ = 0x1;
@@ -23,55 +23,55 @@
 
         private const int RamSize = (32 + 16) * 1024;
 
-        public override void Load(Board board)
+        public override void Load()
         {
-            base.Load(board);
+            base.Load();
 
-            board.ULA.UpdateBorder(this.Peek(Offset_BorderColour));
+            this.BUS.ULA.UpdateBorder(this.Peek(Offset_BorderColour));
 
             // XXXX HACK, HACK, HACK!!
-            var original = board.CPU.PeekShort(0xfffe);
-            board.Poke(0xfffe, 0xed);
-            board.Poke(0xffff, 0x45);   // ED45 is RETN
-            board.CPU.PC.Joined = 0xfffe;
-            _ = board.CPU.Step();
-            board.CPU.PokeShort(0xfffe, original);
+            var original = this.CPU.PeekShort(0xfffe);
+            this.BUS.Poke(0xfffe, 0xed);
+            this.BUS.Poke(0xffff, 0x45);   // ED45 is RETN
+            this.CPU.PC.Joined = 0xfffe;
+            _ = this.CPU.Step();
+            this.CPU.PokeShort(0xfffe, original);
         }
 
-        protected override void LoadRegisters(Z80.Z80 cpu)
+        protected override void LoadRegisters()
         {
-            cpu.RaiseRESET();
+            this.CPU.RaiseRESET();
 
-            cpu.IV = this.Peek(Offset_I);
+            this.CPU.IV = this.Peek(Offset_I);
 
-            cpu.HL.Joined = this.PeekShort(Offset_HL_);
-            cpu.DE.Joined = this.PeekShort(Offset_DE_);
-            cpu.BC.Joined = this.PeekShort(Offset_BC_);
-            cpu.AF.Joined = this.PeekShort(Offset_AF_);
+            this.CPU.HL.Assign(this.PeekShort(Offset_HL_));
+            this.CPU.DE.Assign(this.PeekShort(Offset_DE_));
+            this.CPU.BC.Assign(this.PeekShort(Offset_BC_));
+            this.CPU.AF.Assign(this.PeekShort(Offset_AF_));
 
-            cpu.Exx();
+            this.CPU.Exx();
 
-            cpu.HL.Joined = this.PeekShort(Offset_HL);
-            cpu.DE.Joined = this.PeekShort(Offset_DE);
-            cpu.BC.Joined = this.PeekShort(Offset_BC);
+            this.CPU.HL.Assign(this.PeekShort(Offset_HL));
+            this.CPU.DE.Assign(this.PeekShort(Offset_DE));
+            this.CPU.BC.Assign(this.PeekShort(Offset_BC));
 
-            cpu.IY.Joined = this.PeekShort(Offset_IY);
-            cpu.IX.Joined = this.PeekShort(Offset_IX);
-            cpu.IFF2 = (this.Peek(Offset_IFF2) >> 2) != 0;
-            cpu.REFRESH = this.Peek(Offset_R);
+            this.CPU.IY.Assign(this.PeekShort(Offset_IY));
+            this.CPU.IX.Assign(this.PeekShort(Offset_IX));
+            this.CPU.IFF2 = (this.Peek(Offset_IFF2) >> 2) != 0;
+            this.CPU.REFRESH = this.Peek(Offset_R);
 
-            cpu.ExxAF();
+            this.CPU.ExxAF();
 
-            cpu.AF.Joined = this.PeekShort(Offset_AF);
-            cpu.SP.Joined = this.PeekShort(Offset_SP);
-            cpu.IM = this.Peek(Offset_IM);
+            this.CPU.AF.Assign(this.PeekShort(Offset_AF));
+            this.CPU.SP.Assign(this.PeekShort(Offset_SP));
+            this.CPU.IM = this.Peek(Offset_IM);
         }
 
-        protected override void LoadMemory(Board board)
+        protected override void LoadMemory()
         {
             for (var i = 0; i < RamSize; ++i)
             {
-                board.Poke((ushort)(board.ROM.Size + i), this.Peek((ushort)(HeaderSize + i)));
+                this.BUS.Poke((ushort)(this.BUS.ROM.Size + i), this.Peek((ushort)(HeaderSize + i)));
             }
         }
     }

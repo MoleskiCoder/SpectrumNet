@@ -113,14 +113,14 @@ namespace SpectrumNet
 
         public void LoadSna(string path)
         {
-            var sna = new SnaFile(path);
-            sna.Load(this);
+            var sna = new SnaFile(path, this);
+            sna.Load();
         }
 
         public void LoadZ80(string path)
         {
-            var z80 = new Z80File(path);
-            z80.Load(this);
+            var z80 = new Z80File(path, this);
+            z80.Load();
         }
 
         public void InsertTape(string path)

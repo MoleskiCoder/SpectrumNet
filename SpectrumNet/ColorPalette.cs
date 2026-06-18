@@ -18,7 +18,7 @@
 
         public const int Bright = 0x28;
 
-        private readonly Color[] colors = new Color[16];
+        private readonly Color[] _colors = new Color[16];
 
         public ColorPalette()
         {
@@ -28,7 +28,7 @@
 
         public Color GetColor(Index index, bool bright) => this.GetColor((int)index, bright);
 
-        public Color GetColor(int index) => this.colors[index];
+        public Color GetColor(int index) => this._colors[index];
 
         public Color GetColor(Index index) => this.GetColor((int)index);
 
@@ -54,6 +54,6 @@
                 blue > 0 ? blue + Bright : 0);
         }
 
-        private void LoadExactColour(int idx, int red, int green, int blue) => this.colors[idx] = new Color(red, green, blue);
+        private void LoadExactColour(int idx, int red, int green, int blue) => this._colors[idx] = new Color(red, green, blue);
     }
 }

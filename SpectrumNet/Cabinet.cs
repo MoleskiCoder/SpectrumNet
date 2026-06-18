@@ -15,34 +15,34 @@
         private const int DisplayWidth = Ula.RasterWidth;
         private const int DisplayHeight = Ula.RasterHeight;
 
-        private readonly ColorPalette palette = new();
+        private readonly ColorPalette _palette = new();
 
-        private readonly List<Keys> pressedKeys = [];
-        private readonly Dictionary<PlayerIndex, GamePadButtons> pressedButtons = [];
-        private readonly Dictionary<PlayerIndex, GamePadDPad> pressedDPad = [];
+        private readonly List<Keys> _pressedKeys = [];
+        private readonly Dictionary<PlayerIndex, GamePadButtons> _pressedButtons = [];
+        private readonly Dictionary<PlayerIndex, GamePadDPad> _pressedDPad = [];
 
-        private readonly GraphicsDeviceManager graphics;
-        private SpriteBatch? spriteBatch;
-        private Texture2D? bitmapTexture;
-        private Effect? crtEffect;
+        private readonly GraphicsDeviceManager _graphics;
+        private SpriteBatch? _spriteBatch;
+        private Texture2D? _bitmapTexture;
+        private Effect? _crtEffect;
 
-        private bool disposed;
+        private bool _disposed;
 
         public Cabinet(Configuration configuration)
         {
             this.Settings = configuration;
-            this.Motherboard = new Board(this.palette, configuration);
+            this.Motherboard = new Board(this._palette, configuration);
             this.Content.RootDirectory = "Content";
 
-            this.graphics = new GraphicsDeviceManager(this)
+            this._graphics = new GraphicsDeviceManager(this)
             {
                 IsFullScreen = false,
             };
 
-            this.pressedButtons[PlayerIndex.One] = new GamePadButtons();
-            this.pressedButtons[PlayerIndex.Two] = new GamePadButtons();
-            this.pressedDPad[PlayerIndex.One] = new GamePadDPad();
-            this.pressedDPad[PlayerIndex.Two] = new GamePadDPad();
+            this._pressedButtons[PlayerIndex.One] = new GamePadButtons();
+            this._pressedButtons[PlayerIndex.Two] = new GamePadButtons();
+            this._pressedDPad[PlayerIndex.One] = new GamePadDPad();
+            this._pressedDPad[PlayerIndex.Two] = new GamePadDPad();
         }
 
         public event EventHandler<EventArgs>? Initializing;
@@ -70,12 +70,12 @@
         protected override void LoadContent()
         {
             base.LoadContent();
-            this.crtEffect = this.Content.Load<Effect>("Shaders/crt");
-            this.crtEffect.Parameters["OutputSize"]?.SetValue(new Vector2(DisplayWidth * DisplayScale, DisplayHeight * DisplayScale));
-            this.crtEffect.Parameters["ScanlineStrength"]?.SetValue(0.40f);
-            this.crtEffect.Parameters["PhosphorStrength"]?.SetValue(0.70f);
-            this.crtEffect.Parameters["BarrelDistortion"]?.SetValue(0.12f);
-            this.crtEffect.Parameters["VignetteStrength"]?.SetValue(0.30f);
+            this._crtEffect = this.Content.Load<Effect>("Shaders/crt");
+            this._crtEffect.Parameters["OutputSize"]?.SetValue(new Vector2(DisplayWidth * DisplayScale, DisplayHeight * DisplayScale));
+            this._crtEffect.Parameters["ScanlineStrength"]?.SetValue(0.40f);
+            this._crtEffect.Parameters["PhosphorStrength"]?.SetValue(0.70f);
+            this._crtEffect.Parameters["BarrelDistortion"]?.SetValue(0.12f);
+            this._crtEffect.Parameters["VignetteStrength"]?.SetValue(0.30f);
         }
 
         protected override void Initialize()
@@ -84,10 +84,10 @@
 
             base.Initialize();
 
-            this.spriteBatch = new SpriteBatch(this.GraphicsDevice);
-            this.bitmapTexture = new Texture2D(this.GraphicsDevice, DisplayWidth, DisplayHeight);
+            this._spriteBatch = new SpriteBatch(this.GraphicsDevice);
+            this._bitmapTexture = new Texture2D(this.GraphicsDevice, DisplayWidth, DisplayHeight);
             this.ChangeResolution(DisplayWidth, DisplayHeight);
-            this.palette.Load();
+            this._palette.Load();
 
             this.Motherboard.Initialize();
             this.Motherboard.RaisePOWER();
@@ -123,18 +123,18 @@
 
         protected override void Dispose(bool disposing)
         {
-            if (!this.disposed)
+            if (!this._disposed)
             {
                 if (disposing)
                 {
                     this.Motherboard?.Dispose();
-                    this.crtEffect?.Dispose();
-                    this.bitmapTexture?.Dispose();
-                    this.spriteBatch?.Dispose();
-                    this.graphics?.Dispose();
+                    this._crtEffect?.Dispose();
+                    this._bitmapTexture?.Dispose();
+                    this._spriteBatch?.Dispose();
+                    this._graphics?.Dispose();
                 }
 
-                this.disposed = true;
+                this._disposed = true;
             }
 
             base.Dispose(disposing);
@@ -156,10 +156,10 @@
             var state = GamePad.GetState(PlayerIndex.One);
 
             var currentButtons = state.Buttons;
-            var previousButtons = this.pressedButtons[PlayerIndex.One];
+            var previousButtons = this._pressedButtons[PlayerIndex.One];
 
             var currentDPad = state.DPad;
-            var previousDPad = this.pressedDPad[PlayerIndex.One];
+            var previousDPad = this._pressedDPad[PlayerIndex.One];
 
             for (var i = 0; i < this.Motherboard.NumberOfExpansions; ++i)
             {
@@ -227,8 +227,8 @@
                 }
             }
 
-            this.pressedButtons[PlayerIndex.One] = currentButtons;
-            this.pressedDPad[PlayerIndex.One] = currentDPad;
+            this._pressedButtons[PlayerIndex.One] = currentButtons;
+            this._pressedDPad[PlayerIndex.One] = currentDPad;
         }
 
         private void CheckKeyboard()
@@ -236,14 +236,14 @@
             var state = Keyboard.GetState();
             var current = new HashSet<Keys>(state.GetPressedKeys());
 
-            var newlyReleased = this.pressedKeys.Except(current);
+            var newlyReleased = this._pressedKeys.Except(current);
             this.UpdateReleasedKeys(newlyReleased);
 
-            var newlyPressed = current.Except(this.pressedKeys);
+            var newlyPressed = current.Except(this._pressedKeys);
             this.UpdatePressedKeys(newlyPressed);
 
-            this.pressedKeys.Clear();
-            this.pressedKeys.AddRange(current);
+            this._pressedKeys.Clear();
+            this._pressedKeys.AddRange(current);
         }
 
         private void UpdatePressedKeys(IEnumerable<Keys> keys)
@@ -266,26 +266,26 @@
 
         private void DrawPixels()
         {
-            Debug.Assert(this.bitmapTexture is not null);
-            this.bitmapTexture.SetData(this.Motherboard.ULA.Pixels);
+            Debug.Assert(this._bitmapTexture is not null);
+            this._bitmapTexture.SetData(this.Motherboard.ULA.Pixels);
 
             var viewport = this.GraphicsDevice.Viewport;
             var matrixTransform = Matrix.CreateOrthographicOffCenter(0, viewport.Width, viewport.Height, 0, 0, -1);
 
-            Debug.Assert(this.crtEffect is not null);
-            this.crtEffect.Parameters["MatrixTransform"].SetValue(matrixTransform);
+            Debug.Assert(this._crtEffect is not null);
+            this._crtEffect.Parameters["MatrixTransform"].SetValue(matrixTransform);
 
-            Debug.Assert(this.spriteBatch is not null);
-            this.spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.LinearClamp, null, null, this.crtEffect);
-            this.spriteBatch.Draw(this.bitmapTexture, Vector2.Zero, null, Color.White, 0.0F, Vector2.Zero, DisplayScale, SpriteEffects.None, 0.0F);
-            this.spriteBatch.End();
+            Debug.Assert(this._spriteBatch is not null);
+            this._spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.LinearClamp, null, null, this._crtEffect);
+            this._spriteBatch.Draw(this._bitmapTexture, Vector2.Zero, null, Color.White, 0.0F, Vector2.Zero, DisplayScale, SpriteEffects.None, 0.0F);
+            this._spriteBatch.End();
         }
 
         private void ChangeResolution(int width, int height)
         {
-            this.graphics.PreferredBackBufferWidth = DisplayScale * width;
-            this.graphics.PreferredBackBufferHeight = DisplayScale * height;
-            this.graphics.ApplyChanges();
+            this._graphics.PreferredBackBufferWidth = DisplayScale * width;
+            this._graphics.PreferredBackBufferHeight = DisplayScale * height;
+            this._graphics.ApplyChanges();
         }
     }
 }

@@ -13,25 +13,25 @@
 
         private const float SampleLength = AudioFrequency / (float)Ula.CpuClockRate;
 
-        private readonly DynamicSoundEffectInstance sounds = new(AudioFrequency, AudioChannels.Mono);
-        private readonly byte[] buffer;
-        private int lastSample;
-        private short lastLevel = LowLevel;
+        private readonly DynamicSoundEffectInstance _sounds = new(AudioFrequency, AudioChannels.Mono);
+        private readonly byte[] _buffer;
+        private int _lastSample;
+        private short _lastLevel = LowLevel;
 
-        private bool disposed;
+        private bool _disposed;
 
         public Buzzer()
         {
-            var numberOfSampleBytes = this.sounds.GetSampleSizeInBytes(Ula.FrameLength);
+            var numberOfSampleBytes = this._sounds.GetSampleSizeInBytes(Ula.FrameLength);
             if (numberOfSampleBytes % 2 != 0)
             {
                 ++numberOfSampleBytes;
             }
-            this.buffer = new byte[numberOfSampleBytes];
-            this.sounds.Play();
+            this._buffer = new byte[numberOfSampleBytes];
+            this._sounds.Play();
         }
 
-        private int NumberOfSamples => this.buffer.Length / 2;
+        private int NumberOfSamples => this._buffer.Length / 2;
 
         public void Dispose()
         {
@@ -47,34 +47,34 @@
 
         public void EndFrame()
         {
-            this.FillBuffer(this.lastSample, this.NumberOfSamples, this.lastLevel);
-            this.sounds.SubmitBuffer(this.buffer);
-            this.lastSample = 0;
+            this.FillBuffer(this._lastSample, this.NumberOfSamples, this._lastLevel);
+            this._sounds.SubmitBuffer(this._buffer);
+            this._lastSample = 0;
         }
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!this.disposed)
+            if (!this._disposed)
             {
                 if (disposing)
                 {
-                    this.sounds.Dispose();
+                    this._sounds.Dispose();
                 }
 
-                this.disposed = true;
+                this._disposed = true;
             }
         }
 
         private void Buzz(short value, int sample)
         {
-            this.FillBuffer(this.lastSample, sample, this.lastLevel);
-            this.lastSample = sample;
-            this.lastLevel = value;
+            this.FillBuffer(this._lastSample, sample, this._lastLevel);
+            this._lastSample = sample;
+            this._lastLevel = value;
         }
 
         private void FillBuffer(int from, int to, short value)
         {
-            var samples = MemoryMarshal.Cast<byte, short>(this.buffer.AsSpan());
+            var samples = MemoryMarshal.Cast<byte, short>(this._buffer.AsSpan());
             var section = samples[from..to];
             section.Fill(value);
         }

@@ -64,28 +64,28 @@
         private const int Offset_V2_PC = 32;
         private const int Offset_hardware_mode = 34;
 
-        private int version;    // Illegal, by default!
-        private HardwareModeV2 hardwareModeV2 = HardwareModeV2.Unknown;
+        private int _version;    // Illegal, by default!
+        private HardwareModeV2 _hardwareModeV2 = HardwareModeV2.Unknown;
 
         protected override void ExamineHeaders()
         {
             switch (this.PeekShort(Offset_PC))
             {
                 case 0:
-                    this.version = this.PeekShort(Offset_length_additional_header_block) == 23 ? 2 : 3;
-                    if (this.version == 2)
+                    this._version = this.PeekShort(Offset_length_additional_header_block) == 23 ? 2 : 3;
+                    if (this._version == 2)
                     {
-                        this.hardwareModeV2 = (HardwareModeV2)this.Peek(Offset_hardware_mode);
+                        this._hardwareModeV2 = (HardwareModeV2)this.Peek(Offset_hardware_mode);
                     }
 
                     break;
                 default:
-                    this.version = 1;
+                    this._version = 1;
                     break;
             }
         }
 
-        private int HeaderSize => this.version switch
+        private int HeaderSize => this._version switch
         {
             1 => HeaderSizeV1,
             2 => HeaderSizeV1 + this.PeekShort(Offset_length_additional_header_block) + 2,// Why +2 needed??
@@ -140,7 +140,7 @@
             cpu.Exx();
             cpu.ExxAF();
 
-            if (this.version > 1)
+            if (this._version > 1)
             {
                 cpu.PC.Joined = this.PeekShort(Offset_V2_PC);
             }
@@ -148,13 +148,13 @@
 
         protected override void LoadMemory(Board board)
         {
-            switch (this.version)
+            switch (this._version)
             {
                 case 1:
                     this.LoadMemoryV1(board);
                     break;
                 case 2:
-                    switch (this.hardwareModeV2)
+                    switch (this._hardwareModeV2)
                     {
                         case HardwareModeV2.FortyEightK:
                         case HardwareModeV2.FortyEightK_IF1:

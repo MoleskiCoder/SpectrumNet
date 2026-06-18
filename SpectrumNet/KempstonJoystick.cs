@@ -11,7 +11,7 @@
             Fire = 0b00010000,
         }
 
-        private byte contents;
+        private byte _contents;
 
         public KempstonJoystick(Board motherboard)
         : base(motherboard) => this.BUS.Ports.ReadingPort += this.Ports_ReadingPort;
@@ -40,12 +40,12 @@
         {
             if (e.Port.Low == 0x1f)
             {
-                this.BUS.Ports.WriteInputPort(e.Port, this.contents);
+                this.BUS.Ports.WriteInputPort(e.Port, this._contents);
             }
         }
 
-        private void Set(Switch which) => this.contents = EightBit.Chip.SetBit(this.contents, (byte)which);
+        private void Set(Switch which) => this._contents = EightBit.Chip.SetBit(this._contents, (byte)which);
 
-        private void Reset(Switch which) => this.contents = EightBit.Chip.ClearBit(this.contents, (byte)which);
+        private void Reset(Switch which) => this._contents = EightBit.Chip.ClearBit(this._contents, (byte)which);
     }
 }

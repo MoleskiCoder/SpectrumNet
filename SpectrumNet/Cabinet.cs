@@ -36,6 +36,9 @@
 
             this._graphics = new GraphicsDeviceManager(this)
             {
+                GraphicsProfile = GraphicsProfile.HiDef,
+                PreferredBackBufferWidth = DisplayScale * DisplayWidth,
+                PreferredBackBufferHeight = DisplayScale * DisplayHeight,
                 IsFullScreen = false,
             };
 
@@ -86,12 +89,12 @@
 
             this._spriteBatch = new SpriteBatch(this.GraphicsDevice);
             this._bitmapTexture = new Texture2D(this.GraphicsDevice, DisplayWidth, DisplayHeight);
-            this.ChangeResolution(DisplayWidth, DisplayHeight);
             this._palette.Load();
 
             this.Motherboard.Initialize();
             this.Motherboard.RaisePOWER();
 
+            this.IsFixedTimeStep = true;
             this.TargetElapsedTime = Ula.FrameLength;
             this.IsMouseVisible = false;
 
@@ -101,12 +104,9 @@
         protected override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
-            if (!gameTime.IsRunningSlowly)
-            {
-                this.CheckGamePads();
-                this.CheckKeyboard();
-                this.RunFrame();
-            }
+            this.CheckGamePads();
+            this.CheckKeyboard();
+            this.RunFrame();
         }
 
         protected override void Draw(GameTime gameTime)
@@ -279,13 +279,6 @@
             this._spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.LinearClamp, null, null, this._crtEffect);
             this._spriteBatch.Draw(this._bitmapTexture, Vector2.Zero, null, Color.White, 0.0F, Vector2.Zero, DisplayScale, SpriteEffects.None, 0.0F);
             this._spriteBatch.End();
-        }
-
-        private void ChangeResolution(int width, int height)
-        {
-            this._graphics.PreferredBackBufferWidth = DisplayScale * width;
-            this._graphics.PreferredBackBufferHeight = DisplayScale * height;
-            this._graphics.ApplyChanges();
         }
     }
 }

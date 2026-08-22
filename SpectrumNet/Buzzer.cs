@@ -46,6 +46,31 @@
             this.Stop();
         }
 
+        private void PlayBuffer()
+        {
+            this.Clear();
+            var success = SDL.PutAudioStreamData(this._stream, this._buffer, this._buffer.Length);
+            Wrapper.MaybeThrowException(success, "Unable to put audio data");
+        }
+
+        private void Flush()
+        {
+            var success = SDL.FlushAudioStream(this._stream);
+            Wrapper.MaybeThrowException(success, "Unable to flush audio data");
+        }
+
+        private void Clear()
+        {
+            var remaining = SDL.GetAudioStreamAvailable(this._stream);
+            Wrapper.MaybeThrowException(remaining != -1, "Unable to find how many audio stream bytes are available");
+            if (remaining > 0)
+            {
+                SDL.LogWarn(SDL.LogCategory.Audio, $"Clearing {remaining} bytes of left over audio data");
+                var success = SDL.ClearAudioStream(this._stream);
+                Wrapper.MaybeThrowException(success, "Unable to clear audio data");
+            }
+        }
+
         public void Stop()
         {
             var success = SDL.PauseAudioStreamDevice(this._stream);
@@ -73,8 +98,7 @@
         public void EndFrame()
         {
             this.FillBuffer(this._lastSample, this._buffer.Length, this._lastLevel);
-            var success = SDL.PutAudioStreamData(this._stream, this._buffer, this._buffer.Length);
-            Wrapper.MaybeThrowException(success, "Unable to put audio data");
+            this.PlayBuffer();
             this._lastSample = 0;
         }
 

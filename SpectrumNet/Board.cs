@@ -1,8 +1,8 @@
-﻿using EightBit;
-using System.Diagnostics;
-
-namespace SpectrumNet
+﻿namespace SpectrumNet
 {
+    using SDL3;
+    using System.Diagnostics;
+
     internal sealed class Board : EightBit.Bus, IDisposable
     {
         // 48K ROM LD-BYTES entry point, trapped for instant tape loading
@@ -44,7 +44,7 @@ namespace SpectrumNet
 
         public Ula ULA { get; }
 
-        public Buzzer Sound { get; } = new Buzzer();
+        public Buzzer Sound { get; } = new Buzzer(Ula.FramesPerSecond, Ula.CpuClockRate, SDL.AudioFormat.AudioU8);
 
         public EightBit.InputOutput Ports { get; } = new EightBit.InputOutput();
 
@@ -90,6 +90,8 @@ namespace SpectrumNet
             this.CPU.LowerRESET();
             this.CPU.RaiseINT();
             this.CPU.RaiseNMI();
+
+            this.Sound.Start();
         }
 
         public override void LowerPOWER()

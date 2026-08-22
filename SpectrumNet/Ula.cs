@@ -1,8 +1,7 @@
 ﻿namespace SpectrumNet
 {
+    using SDL3;
     using EightBit;
-    using Microsoft.Xna.Framework;
-    using Microsoft.Xna.Framework.Input;
     using System;
 
     internal sealed class Ula : EightBit.ClockedChip
@@ -42,7 +41,7 @@
         private int _frameCounter;   // 4 bits
         private int _verticalCounter; // 9 bits
         private int _horizontalCounter; // 9 bits
-        private Color _borderColour;
+        private uint _borderColour;
         private int _contention;
         bool _accessingVRAM;
 
@@ -53,8 +52,8 @@
         // Input port information
         private EightBit.PinLevel _ear = EightBit.PinLevel.Low; // Bit 6
 
-        private readonly Dictionary<byte, Keys[]> _keyboardMapping = [];
-        private readonly HashSet<Keys> _keyboardRaw = [];
+        private readonly Dictionary<byte, SDL.Keycode[]> _keyboardMapping = [];
+        private readonly HashSet<SDL.Keycode> _keyboardRaw = [];
 
         public Ula(ColorPalette palette, Board bus)
         {
@@ -133,7 +132,7 @@
 
         public void UpdateBorder(int value) => this._borderColour = this._palette.GetColor(value, false);
 
-        public Color[] Pixels { get; } = new Color[RasterWidth * RasterHeight];
+        public uint[] Pixels { get; } = new uint[RasterWidth * RasterHeight];
 
         private int Contention => this._contention;
 
@@ -267,9 +266,9 @@
             this.C = 0;
         }
 
-        public void PokeKey(Keys raw) => this._keyboardRaw.Add(raw);
+        public void PokeKey(SDL.Keycode raw) => this._keyboardRaw.Add(raw);
 
-        public void PullKey(Keys raw) => this._keyboardRaw.Remove(raw);
+        public void PullKey(SDL.Keycode raw) => this._keyboardRaw.Remove(raw);
 
         private void Ula_RaisedPOWER(object? sender, EventArgs e)
         {
@@ -293,16 +292,16 @@
         private void InitialiseKeyboardMapping()
         {
             // Left side
-            this._keyboardMapping[Bit(0)] = [Keys.LeftShift, Keys.Z,             Keys.X,         Keys.C,         Keys.V];
-            this._keyboardMapping[Bit(1)] = [Keys.A,         Keys.S,             Keys.D,         Keys.F,         Keys.G];
-            this._keyboardMapping[Bit(2)] = [Keys.Q,         Keys.W,             Keys.E,         Keys.R,         Keys.T];
-            this._keyboardMapping[Bit(3)] = [Keys.D1,        Keys.D2,            Keys.D3,        Keys.D4,        Keys.D5];
+            this._keyboardMapping[Bit(0)] = [SDL.Keycode.LShift,    SDL.Keycode.Z,      SDL.Keycode.X,      SDL.Keycode.C,      SDL.Keycode.V];
+            this._keyboardMapping[Bit(1)] = [SDL.Keycode.A,         SDL.Keycode.S,      SDL.Keycode.D,      SDL.Keycode.F,      SDL.Keycode.G];
+            this._keyboardMapping[Bit(2)] = [SDL.Keycode.Q,         SDL.Keycode.W,      SDL.Keycode.E,      SDL.Keycode.R,      SDL.Keycode.T];
+            this._keyboardMapping[Bit(3)] = [SDL.Keycode.Alpha1,    SDL.Keycode.Alpha2, SDL.Keycode.Alpha3, SDL.Keycode.Alpha4, SDL.Keycode.Alpha5];
 
             // Right side
-            this._keyboardMapping[Bit(4)] = [Keys.D0,        Keys.D9,            Keys.D8,        Keys.D7,        Keys.D6];
-            this._keyboardMapping[Bit(5)] = [Keys.P,         Keys.O,             Keys.I,         Keys.U,         Keys.Y];
-            this._keyboardMapping[Bit(6)] = [Keys.Enter,     Keys.L,             Keys.K,         Keys.J,         Keys.H];
-            this._keyboardMapping[Bit(7)] = [Keys.Space,     Keys.RightShift,    Keys.M,         Keys.N,         Keys.B];
+            this._keyboardMapping[Bit(4)] = [SDL.Keycode.Alpha0,    SDL.Keycode.Alpha9, SDL.Keycode.Alpha8, SDL.Keycode.Alpha7, SDL.Keycode.Alpha6];
+            this._keyboardMapping[Bit(5)] = [SDL.Keycode.P,         SDL.Keycode.O,      SDL.Keycode.I,      SDL.Keycode.U,      SDL.Keycode.Y];
+            this._keyboardMapping[Bit(6)] = [SDL.Keycode.Return,    SDL.Keycode.L,      SDL.Keycode.K,      SDL.Keycode.J,      SDL.Keycode.H];
+            this._keyboardMapping[Bit(7)] = [SDL.Keycode.Space,     SDL.Keycode.RShift, SDL.Keycode.M,      SDL.Keycode.N,      SDL.Keycode.B];
         }
 
         private byte FindSelectedKeys(byte rows)
@@ -433,13 +432,13 @@
             this._accessingVRAM = false;
         }
 
-        private void SetClockedPixel(int offset, Color colour)
+        private void SetClockedPixel(int offset, uint colour)
         {
             this.SetPixel(offset, colour);
             this.Tick();
         }
 
-        private void SetPixel(int offset, Color colour) => this.Pixels[offset] = colour;
+        private void SetPixel(int offset, uint colour) => this.Pixels[offset] = colour;
 
         private void Ports_ReadingPort(object? sender, PortEventArgs e) => this.MaybeReadingPort(e.Port);
 

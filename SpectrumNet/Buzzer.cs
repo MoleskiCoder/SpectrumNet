@@ -1,37 +1,62 @@
 ﻿namespace SpectrumNet
 {
     using EightBit;
-    using Microsoft.Xna.Framework.Audio;
+    using Gaming;
+    using SDL3;
     using System;
-    using System.Runtime.InteropServices;
 
     internal class Buzzer : IDisposable
     {
         private const int AudioFrequency = 44100;
-        private const short LowLevel = short.MinValue;
-        private const short HighLevel = short.MaxValue;
+        private const byte LowLevel = byte.MinValue;
+        private const byte HighLevel = byte.MaxValue;
 
-        private const float SampleLength = AudioFrequency / (float)Ula.CpuClockRate;
+        private readonly float _sampleLength;
 
-        private readonly DynamicSoundEffectInstance _sounds = new(AudioFrequency, AudioChannels.Mono);
+        private readonly ScopedHandle _stream = new(IntPtr.Zero, h => SDL.DestroyAudioStream(h));
+
         private readonly byte[] _buffer;
         private int _lastSample;
-        private short _lastLevel = LowLevel;
+        private byte _lastLevel = LowLevel;
 
         private bool _disposed;
 
-        public Buzzer()
+        public Buzzer(float frameRate, int clockRate, SDL.AudioFormat format)
         {
-            var numberOfSampleBytes = this._sounds.GetSampleSizeInBytes(Ula.FrameLength);
-            if (numberOfSampleBytes % 2 != 0)
-            {
-                ++numberOfSampleBytes;
-            }
-            this._buffer = new byte[numberOfSampleBytes];
-            this._sounds.Play();
+            this._sampleLength = (float)AudioFrequency / (float)clockRate;
+            var cyclesPerSample = (float)clockRate / (float)AudioFrequency;
+            SDL.LogInfo(SDL.LogCategory.Audio, $"Audio frequency: {AudioFrequency}");
+            SDL.LogInfo(SDL.LogCategory.Audio, $"CPU Clock rate: {clockRate}");
+            SDL.LogInfo(SDL.LogCategory.Audio, $"Sample length: {this._sampleLength}");
+            SDL.LogInfo(SDL.LogCategory.Audio, $"Cycles per sample: {cyclesPerSample}");
+
+            SDL.AudioSpec want;
+            want.Freq = AudioFrequency;
+            want.Format = format;
+            want.Channels = 1;
+
+            this._stream.Handle = SDL.OpenAudioDeviceStream(SDL.AudioDeviceDefaultPlayback, want, null, IntPtr.Zero);
+            Wrapper.MaybeThrowException(this._stream, "Unable to open audio stream");
+
+            var samplesPerFrame = (float)AudioFrequency / frameRate + 1.0f;
+            SDL.LogInfo(SDL.LogCategory.Audio, $"Samples per frame: {samplesPerFrame}");
+            SDL.LogInfo(SDL.LogCategory.Audio, $"Samples per frame (cast): {(ulong)samplesPerFrame}");
+            this._buffer = new byte[(ulong)samplesPerFrame];
+
+            this.Stop();
         }
 
-        private int NumberOfSamples => this._buffer.Length / 2;
+        public void Stop()
+        {
+            var success = SDL.PauseAudioStreamDevice(this._stream);
+            Gaming.Wrapper.MaybeThrowException(success, "Unable to pause audio device stream");
+        }
+
+        public void Start()
+        {
+            var success = SDL.ResumeAudioStreamDevice(this._stream);
+            Gaming.Wrapper.MaybeThrowException(success, "Unable to resume audio device stream");
+        }
 
         public void Dispose()
         {
@@ -47,8 +72,9 @@
 
         public void EndFrame()
         {
-            this.FillBuffer(this._lastSample, this.NumberOfSamples, this._lastLevel);
-            this._sounds.SubmitBuffer(this._buffer);
+            this.FillBuffer(this._lastSample, this._buffer.Length, this._lastLevel);
+            var success = SDL.PutAudioStreamData(this._stream, this._buffer, this._buffer.Length);
+            Wrapper.MaybeThrowException(success, "Unable to put audio data");
             this._lastSample = 0;
         }
 
@@ -58,27 +84,27 @@
             {
                 if (disposing)
                 {
-                    this._sounds.Dispose();
+                    this._stream.Dispose();
                 }
 
                 this._disposed = true;
             }
         }
 
-        private void Buzz(short value, int sample)
+        private void Buzz(byte value, int sample)
         {
             this.FillBuffer(this._lastSample, sample, this._lastLevel);
             this._lastSample = sample;
             this._lastLevel = value;
         }
 
-        private void FillBuffer(int from, int to, short value)
+        private void FillBuffer(int from, int to, byte value)
         {
-            var samples = MemoryMarshal.Cast<byte, short>(this._buffer.AsSpan());
+            var samples = this._buffer.AsSpan();
             var section = samples[from..to];
             section.Fill(value);
         }
 
-        private static int Sample(int cycle) => (int)(cycle * SampleLength);
+        private int Sample(int cycle) => (int)(cycle * this._sampleLength);
     }
 }

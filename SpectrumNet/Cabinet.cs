@@ -29,8 +29,6 @@
 
         public void InsertTape(string path) => this.Motherboard.InsertTape(path);
 
-        protected override uint[] Pixels => this.Motherboard.ULA.Pixels;
-
         public override float FramesPerSecond => Ula.FramesPerSecond;
 
         public override bool UseVSYNC => true;
@@ -42,6 +40,8 @@
         public override int RasterHeight => Ula.RasterHeight;
 
         public override string Title => "Spectrum";
+
+        protected override uint[] Pixels() => this.Motherboard.ULA.Pixels;
 
         public override void RaisePOWER()
         {

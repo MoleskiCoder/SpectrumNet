@@ -13,7 +13,7 @@
 
         private readonly float _sampleLength;
 
-        private readonly ScopedHandle _stream = new(IntPtr.Zero, h => SDL.DestroyAudioStream(h));
+        private readonly ScopedHandle _stream = new(SDL.DestroyAudioStream);
 
         private readonly byte[] _buffer;
         private int _lastSample;

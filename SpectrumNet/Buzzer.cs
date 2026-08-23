@@ -5,7 +5,7 @@
     using SDL3;
     using System;
 
-    internal class Buzzer : IDisposable
+    internal sealed class Buzzer : IDisposable
     {
         private const int AudioFrequency = 44100;
         private const byte LowLevel = byte.MinValue;
@@ -102,7 +102,7 @@
             this._lastSample = 0;
         }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (!this._disposed)
             {

@@ -2,7 +2,7 @@
 {
     using SDL3;
 
-    internal class ColorPalette
+    internal sealed class ColorPalette
     {
         internal enum Index
         {

@@ -1,6 +1,6 @@
 ﻿namespace SpectrumNet
 {
-    internal class SnaFile(string path, Board bus) : SnapshotFile(path, bus)
+    internal sealed class SnaFile(string path, Board bus) : SnapshotFile(path, bus)
     {
         private const int Offset_I = 0x0;
         private const int Offset_HL_ = 0x1;

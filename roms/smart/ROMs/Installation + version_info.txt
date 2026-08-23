@@ -1,0 +1,101 @@
+
+Installing ROMS
+---------------
+
+To install ROMs (enable EPROM writes on V1 SMART
+Cards by setting DIP Switch 2 to ON - ie: up)
+
+Go to the ROM Manager by first holding ZERO when
+powering up the Spectrum. At the ROM index screen,
+press Enter and then select option [2] "Write ROM
+to a bank" (or option [1] for firmware updates)
+Follow the prompts. 
+
+You can either overwrite the existing installed
+ROMs or put new ROMs in empty slots - but please
+note the following:
+
+* DiagROM needs to go in SLOT B if you want to start
+it with the switch on the SMART Card.
+
+* If you put the Snaploader into a bank different
+to where the power-on GOTO feature is set, you'll
+probably want to change the GOTO to suit (use option 6).
+
+
+
+Version Info:
+-------------
+
+****************
+* FIRMWARE.Vxx *
+****************
+
+
+v11 - Change: Now invoked by holding ZERO (actually any
+      key from 6-0) at power up. 
+
+      Change: Sinclair BASIC selected by pressing "S"
+      (to avoid confusion with Snaploader method which
+      allows its NMI features. This method does not.) 
+
+
+
+****************
+* SNAPLOAD.Vxx *
+****************
+
+Game loader ROM for .sna and .tap files.
+
+Latest version:
+
+v32 - Added tape position memory to NMI Menu if pressed after loading a .tap
+      No longer prompts to install patched ROM on V2 SMART Cards, just does it.
+      Tape goes back to start if program tries to read from end of file
+      Header FLAG byte is now checked
+      NOP'd out the two OUT 254,A in LD_BYTES to stop so much border flashing when loading .taps.
+
+
+Previously...
+
+
+v31 - Tiny bugfix: Previously, could not enter a folder in the root
+      dir if it had the same name as the disk label.
+
+v30 - Long filenames are now shown in directory listings.
+      Proportional font and single pane DIR listings due to above
+      Only .sna and .tap files are now shown
+      Files can be deleted with Sym+D
+      New DIRs can made with Sym+N
+      Quit browser with Sym+0
+      
+
+v23 - Can press CAPS SHIFT+SPACE to boot Sinclair BASIC
+      (with NMI button features available)
+
+
+--------------------------------------------------------
+
+
+****************
+* Diag_ROM.vxx *
+****************
+
+Used to test for faults in the Spectrum itself. See docs
+folder for full info.
+
+
+--------------------------------------------------------
+
+
+***************
+* Toolkit.vxx *
+***************
+
+Allows SD Cards to be formatted to FAT16 in situ.
+
+
+V01 - First release.
+
+
+---------------------------------------------------------

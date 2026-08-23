@@ -1,0 +1,27 @@
+
+Compatibility with through-port interfaces:
+-------------------------------------------
+
+* In general, it is NOT RECOMMENDED that the SMART Card is used with other
+  interfaces (especially the RAM Turbo when a cartridge is inserted in it.)
+  The general rule is that if an expansion device has a ROM then it will
+  *not work* with the SMART Card (or any other device that also has a ROM).
+
+
+Users report that the SMART Card (v2) *does work* with the following
+peripherals:
+
+
+* Spectra SCART interface (disable the ROM and RS323 socket functionalities on the Spectra: dip switches 2-4:off)
+  http://www.fruitcake.plus.com/Sinclair/Spectrum/Spectra/SpectraInterface.htm 
+
+* ZX-HD from Byte Delight.
+  https://www.bytedelight.com/?page_id=1800
+
+* PC keyboard interface:
+  http://www.benophetinternet.nl/hobby/pcki.htm
+
+
+If you have any updates, please let me know at:
+
+smart@retroleum.co.uk

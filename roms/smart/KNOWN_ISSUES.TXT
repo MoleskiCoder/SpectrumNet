@@ -1,0 +1,32 @@
+
+Please report anything odd to:   smart@retroleum.co.uk
+
+
+SLAM128+ ULA:
+
+Brendan Alford has reported a compatibility issue with the 
+SLAM128+ ULA replacement board (which can be installed in
+Spectrum128s). Garbage appears on screen at boot because the
+SLAM128+ adds features - enabled by default - from the Timex 
+Spectrum clones. These features were not present in the original
+Spectrum 128 machines. Nothing can really be done on the SMART
+Card side about this - it was designed for the original standard
+Spectrum hardware only. Unless the designers of the SLAM128+
+update their logic to disable the extra features by default,
+the solution would be appear to be to stick with the standard 128
+ULA if you want to use the SMART Card on a Spectrum 128 :)
+
+
+Long Directories:
+
+Folders with more than about 100 files in them are not recommended
+since the processing overhead means things slow down quite a bit.
+The reason being that the FAT16 filesystem was not designed
+with a 3.5MHz 8-bit CPU in mind :) Add in the wacky way that long
+filenames were implemented by Microsoft and it can all be quite a
+struggle for the Spectrum..
+
+
+
+
+

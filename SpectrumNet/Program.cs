@@ -22,11 +22,11 @@ static void LoadROM(Configuration configuration, Cabinet computer)
     var romDirectory = configuration.RomDirectory;
     //computer.Plug(romDirectory + "\\G12R_ROM.bin");	// Planetoids (Asteroids)
     //computer.Plug(romDirectory + "\\G24R_ROM.bin");	// Horace and the Spiders
-    //computer.Plug(romDirectory + "\\G9R_ROM.bin");	// Space Raiders (Space Invaders)
+    computer.Plug(romDirectory + "\\G9R_ROM.bin");	// Space Raiders (Space Invaders)
     //computer.Plug(romDirectory + "\\Jet Pac (1983)(Sinclair Research)(GB).rom");	// Jet Pac
 
     //computer.Plug(romDirectory + "\\System_Test_ROM.bin");  // Sinclair test ROM by Dr. Ian Logan
-    computer.Plug(romDirectory + "\\Release-v0.37\\testrom.bin");
+    //computer.Plug(romDirectory + "\\Release-v0.37\\testrom.bin");
 
     //computer.Plug(romDirectory + "\\smart\\ROMs\\Old Versions\\old_diagroms\\DiagROM.v28");
 

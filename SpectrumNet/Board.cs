@@ -115,8 +115,8 @@
 
         public void LoadSna(string path)
         {
-            var sna = new SnaFile(path, this);
-            sna.Load();
+            var sna = new SnaFile(path);
+            sna.Load(this);
         }
 
         public void LoadZ80(string path)

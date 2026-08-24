@@ -27,7 +27,7 @@
         {
             base.Load();
 
-            this.BUS.ULA.UpdateBorder(this.Peek(Offset_BorderColour));
+            this.BUS.ULA.SetBorder(this.Peek(Offset_BorderColour));
 
             // XXXX HACK, HACK, HACK!!
             var original = this.CPU.PeekShort(0xfffe);

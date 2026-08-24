@@ -121,8 +121,8 @@
 
         public void LoadZ80(string path)
         {
-            var z80 = new Z80File(path, this);
-            z80.Load();
+            var z80 = new Z80File(path);
+            z80.Load(this);
         }
 
         public void InsertTape(string path)

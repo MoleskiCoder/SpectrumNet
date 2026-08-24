@@ -1,10 +1,11 @@
 ﻿namespace SpectrumNet
 {
     using System;
+    using System.Diagnostics;
 
-    internal sealed class Z80File(string path, Board bus) : SnapshotFile(path, bus)
+    internal sealed class Z80File(string path) : LittleEndianContent
     {
-        private enum HardwareModeV2
+        private enum HardwareMode
         {
             FortyEightK,
             FortyEightK_IF1,
@@ -14,300 +15,261 @@
             Unknown = -1
         }
 
-        private const int BlockSize = 0x4000;
+        private const int Impossible8 = 0x100; // impossible value for a byte
+        private const int Impossible16 = 0x10000; // impossible value for a word
 
-        // V1 Header block
 
-        private const int Offset_A = 0;
-        private const int Offset_F = 1;
-        private const int Offset_BC = 2;
-        private const int Offset_HL = 4;
-        private const int Offset_PC = 6;
-        private const int Offset_SP = 8;
-        private const int Offset_I = 10;
-        private const int Offset_R = 11; // Bit 7 is not significant!
+        private readonly string _path = path;
 
-        // Bit 0	 : Bit 7 of the R - register
-        // Bit 1 - 3 : Border colour
-        // Bit 4     : 1 = Basic SamRom switched in
-        // Bit 5     : 1 = Block of data is compressed
-        // Bit 6 - 7 : No meaning
-        private const int Offset_misc_1 = 12;
+        private int _version;   // Illegal, by default!
 
-        private const int Offset_DE = 13;
-        private const int Offset_BC_ = 15;
-        private const int Offset_DE_ = 17;
-        private const int Offset_HL_ = 19;
-        private const int Offset_A_ = 21;
-        private const int Offset_F_ = 22;
-        private const int Offset_IY = 23;
-        private const int Offset_IX = 25;
-        private const int Offset_IFF1 = 27;
-        private const int Offset_IFF2 = 28;
+        private byte _misc1;
+        private byte _misc2;
 
-        // Bit 0 - 1 : Interrupt mode(0, 1 or 2)
-        // Bit 2     : 1 = Issue 2 emulation
-        // Bit 3     : 1 = Double interrupt frequency
-        // Bit 4 - 5 : 1 = High video synchronisation
-        //             3 = Low video synchronisation
-        //             0, 2 = Normal
-        // Bit 6 - 7 : 0 = Cursor / Protek / AGF joystick
-        //             1 = Kempston joystick
-        //             2 = Sinclair 2 Left joystick(or user
-        //	               defined, for version 3.z80 files)
-        //             3 = Sinclair 2 Right joystick
-        private const int Offset_misc_2 = 29;
+        private readonly EightBit.Register16 _additionalHeaderLength = new();
 
-        private const int HeaderSizeV1 = Offset_misc_2 + 1;
+        private byte _hardwareMode;
+        private byte _emulationMode;
 
-        private const int Offset_length_additional_header_block = 30;
-        private const int Offset_V2_PC = 32;
-        private const int Offset_hardware_mode = 34;
-
-        private int _version;    // Illegal, by default!
-        private HardwareModeV2 _hardwareModeV2 = HardwareModeV2.Unknown;
-
-        protected override void ExamineHeaders()
+        private readonly int[] _window =
         {
-            switch (this.PeekShort(Offset_PC).Joined)
-            {
-                case 0:
-                    this._version = this.PeekShort(Offset_length_additional_header_block).Joined == 23 ? 2 : 3;
-                    if (this._version == 2)
-                    {
-                        this._hardwareModeV2 = (HardwareModeV2)this.Peek(Offset_hardware_mode);
-                    }
-
-                    break;
-                default:
-                    this._version = 1;
-                    break;
-            }
-        }
-
-        private int HeaderSize => this._version switch
-        {
-            1 => HeaderSizeV1,
-            2 => HeaderSizeV1 + this.PeekShort(Offset_length_additional_header_block).Joined + 2,// Why +2 needed??
-            _ => throw new InvalidOperationException("Unknown Z80 file version"),
+            Impossible8,
+            Impossible8,
+            Impossible8,
+            Impossible8
         };
 
-        public override void Load()
+        private readonly int[] _block_addresses_48k =
         {
-            base.Load();
-            this.BUS.ULA.UpdateBorder((this.Misc1() >> 1) & (int)EightBit.Mask.Three);
+            0,				// 0	(48K ROM)
+		    Impossible16,	// 1	(Interface I, Disciple or Plus D ROM)
+		    Impossible16,	// 2
+		    Impossible16,	// 3
+		    0x8000,			// 4
+		    0xc000,			// 5
+		    Impossible16,	// 6
+		    Impossible16,	// 7
+		    0x4000,			// 8
+		    Impossible16,	// 9
+		    Impossible16,	// 10
+		    Impossible16,	// 11	(Multiface ROM)
+	    };
+
+        private int RefreshHigh => this._misc1 & (byte)EightBit.Mask.One;
+
+        private int Border => (this._misc1 >> 1) & (int)EightBit.Mask.Three;
+        private int IM => this._misc2 & (byte)EightBit.Mask.Two;
+        private bool Compressed => (this._misc1 & (byte)EightBit.Bits.Bit5) != 0;   // Only valid for V1
+
+        public void Load(Board board)
+        {
+            base.Load(this._path);
+
+            // N.B. Power must be raised prior to loading
+            // registers, otherwise power on defaults will override
+            // loaded values.
+            if (!board.CPU.Powered)
+                throw new InvalidOperationException("Whoops: CPU has not been powered on.");
+
+            this.LoadRegisters(board.CPU);
+            this.LoadMemory(board);
+
+            board.ULA.SetBorder(this.Border);
         }
 
-        protected override void LoadRegisters()
+        private void LoadRegisters(Z80.Z80 cpu)
         {
-            this.CPU.RaiseRESET();
+            Debug.Assert(cpu is not null);
 
-            this.CPU.A = this.Peek(Offset_A);
-            this.CPU.F = this.Peek(Offset_F);
+            this.ResetPosition();
 
-            this.CPU.BC.Assign(this.PeekShort(Offset_BC));
-            this.CPU.HL.Assign(this.PeekShort(Offset_HL));
-            this.CPU.PC.Assign(this.PeekShort(Offset_PC)); // Only valid for V1
-            this.CPU.SP.Assign(this.PeekShort(Offset_SP));
+            cpu.RaiseRESET();
 
-            this.CPU.IV = this.Peek(Offset_I);
+            // V1
 
-            this.CPU.REFRESH = this.Peek(Offset_R);
-            this.CPU.REFRESH &= (byte)((this.Misc1() & (byte)EightBit.Mask.One) << 7);
+            cpu.A = this.FetchByte();
+            cpu.F = this.FetchByte();
 
-            this.CPU.DE.Assign(this.PeekShort(Offset_DE));
+            cpu.BC.Assign(this.FetchWord());
+            cpu.HL.Assign(this.FetchWord());
+            cpu.PC.Assign(this.FetchWord());
+            this._version = cpu.PC.Joined == 0 ? 2 : 1;
 
-            this.CPU.Exx();
+            cpu.SP.Assign(this.FetchWord());
 
-            this.CPU.BC.Assign(this.PeekShort(Offset_BC_));
-            this.CPU.DE.Assign(this.PeekShort(Offset_DE_));
-            this.CPU.HL.Assign(this.PeekShort(Offset_HL_));
+            cpu.IV = this.FetchByte();
 
-            this.CPU.ExxAF();
+            cpu.REFRESH = this.FetchByte();
+            this._misc1 = this.FetchByte();
+            this._misc1 = this._misc1 == 0xff ? (byte)1 : this._misc1;
+            cpu.REFRESH &= (byte)(this.RefreshHigh << 7);
 
-            this.CPU.A = this.Peek(Offset_A_);
-            this.CPU.F = this.Peek(Offset_F_);
+            cpu.DE.Assign(this.FetchWord());
 
-            this.CPU.IY.Assign(this.PeekShort(Offset_IY));
-            this.CPU.IX.Assign(this.PeekShort(Offset_IX));
+            cpu.Exx();
 
-            this.CPU.IFF1 = this.Peek(Offset_IFF1) != 0;
-            this.CPU.IFF2 = this.Peek(Offset_IFF2) != 0;
+            cpu.BC.Assign(this.FetchWord());
+            cpu.DE.Assign(this.FetchWord());
+            cpu.HL.Assign(this.FetchWord());
 
-            var misc2 = this.Peek(Offset_misc_2);
-            this.CPU.IM = misc2 & (byte)EightBit.Mask.Two;
+            cpu.ExxAF();
 
-            this.CPU.Exx();
-            this.CPU.ExxAF();
+            cpu.A = this.FetchByte();
+            cpu.F = this.FetchByte();
 
-            if (this._version > 1)
-            {
-                this.CPU.PC.Assign(this.PeekShort(Offset_V2_PC));
-            }
+            cpu.IY.Assign(this.FetchWord());
+            cpu.IX.Assign(this.FetchWord());
+
+            cpu.IFF1 = this.FetchByte() != 0;
+            cpu.IFF2 = this.FetchByte() != 0;
+
+            this._misc2 = this.FetchByte();
+            cpu.IM = this.IM;
+
+            cpu.Exx();
+            cpu.ExxAF();
+
+            Debug.Assert(this._version >= 1);
+
+            if (this._version == 1) return;
+
+            this._additionalHeaderLength.Assign(this.FetchWord());
+            this._version = this._additionalHeaderLength.Joined == 23 ? 2 : 3;
+
+            cpu.PC.Assign(this.FetchWord());
+
+            this._hardwareMode = this.FetchByte();
+            if (this._hardwareMode != (byte)HardwareMode.FortyEightK)
+                throw new InvalidDataException("Only 48K ZX Spectrum is supported");
+
+            var state_35 = this.FetchByte(); // offset 35
+            var state_36 = this.FetchByte(); // offset 36
+
+            this._emulationMode = this.FetchByte(); // offset 37
+
+            var last_soundchip_register_number = this.FetchByte(); // offset 38, soundchip register number
+            byte[] soundchip_registers = new byte[16];
+            for (int i = 0; i < 16; ++i)
+                soundchip_registers[i] = this.FetchByte(); // offset 39 - 54, sound chip registers
+
+            Debug.Assert(this._version == 2);
         }
 
-        protected override void LoadMemory()
+        private void LoadMemory(Board board)
         {
             switch (this._version)
             {
                 case 1:
-                    this.LoadMemoryV1();
+                    this.LoadMemoryV1(board);
                     break;
                 case 2:
-                    switch (this._hardwareModeV2)
-                    {
-                        case HardwareModeV2.FortyEightK:
-                        case HardwareModeV2.FortyEightK_IF1:
-                            this.LoadMemoryV2();
-                            break;
-                        case HardwareModeV2.SamRam:
-                        case HardwareModeV2.OneTwentyEightK:
-                        case HardwareModeV2.OneTwentyEightK_IF1:
-                        case HardwareModeV2.Unknown:
-                        default:
-                            throw new InvalidOperationException("Only 48K ZX Spectrums are handled.");
-                    }
-
+                    this.LoadMemoryV2(board);
                     break;
                 default:
-                    throw new InvalidOperationException("Only V1 or V2 Z80 files are handled.");
+                    throw new InvalidDataException("Only V1 or V2 Z80 files are handled.");
             }
         }
 
-        private byte Misc1()
+        private void ResetWindow()
         {
-            var misc1 = this.Peek(Offset_misc_1);
-            return misc1 == 0xff ? (byte)1 : misc1;
+            this._window[0] = Impossible8;
+            this._window[1] = Impossible8;
+            this._window[2] = Impossible8;
+            this._window[3] = Impossible8;
         }
 
-        private void LoadMemoryV1()
-        {
-            System.Diagnostics.Debug.WriteLine("LoadMemoryV1");
+        private bool CompressedWindow =>
+            (this._window[0] == 0xed) && (this._window[1] == 0xed);
 
-            var compressed = (this.Misc1() & (byte)EightBit.Bits.Bit5) != 0;
-            if (compressed)
-            {
-                this.LoadMemoryCompressedV1((ushort)this.HeaderSize);
-            }
-            else
-            {
-                this.LoadMemoryUncompressed((ushort)this.HeaderSize);
-            }
+        private bool FinishedWindow =>
+            (this._window[0] == 0x00) && (this._window[1] == 0xed) && (this._window[2] == 0xed) && (this._window[3] == 0x00);
+
+        private void AdjustWindow(int current)
+        {
+            for (int i = 2; i >= 0; --i)
+                this._window[i + 1] = this._window[i];
+            this._window[0] = current;
         }
 
-        private void LoadMemoryCompressedV1(ushort offset)
+        private byte FetchByteWindowed()
         {
-            System.Diagnostics.Debug.WriteLine($"LoadMemoryCompressedV1: offset={offset}");
-
-            var position = this.BUS.ROM.Size;
-            var fileSize = this.Size - offset - 2;
-            this.LoadCompressedBlock(offset, (ushort)position, (ushort)fileSize);
+            var current = FetchByte();
+            this.AdjustWindow(current);
+            return current;
         }
 
-        private void LoadMemoryV2()
+        private void LoadMemoryCompressedV1(Board board)
         {
-            System.Diagnostics.Debug.WriteLine("LoadMemoryV2");
-
-            var position = (ushort)this.HeaderSize;
-            while (position < this.Size)
+            this.ResetWindow();
+            var destination = (ushort)board.ROM.Size;
+            while (true)
             {
-                position += this.LoadMemoryBlock(position);
-            }
-        }
-
-        private ushort LoadMemoryBlock(ushort offset)
-        {
-            System.Diagnostics.Debug.WriteLine($"LoadMemoryBlock: offset={offset}");
-
-            var offsetLength = offset;
-            var offsetPage = (ushort)(offsetLength + 2);
-            var offsetBlock = (ushort)(offsetPage + 1);
-
-            var length = this.PeekShort(offsetLength).Joined;
-            var page = this.Peek(offsetPage);
-            var uncompressed = length == 0xffff;
-            if (uncompressed)
-            {
-                length = 0x4000;
-            }
-
-            var convertedPage = page switch
-            {
-                0 => throw new InvalidOperationException("Cannot overwrite ROM from Z80 file!"),    // 48K ROM!
-                8 => 1, // 0x4000 - 0x7fff
-                4 => 2, // 0x8000 - 0xbfff
-                5 => 3, // 0xc000 - 0xffff
-                _ => throw new InvalidOperationException("Invalid page load detected!"),
-            };
-            var destination = (ushort)(convertedPage * BlockSize);
-            if (uncompressed)
-            {
-                this.LoadUncompressedBlock(offsetBlock, destination, length);
-            }
-            else
-            {
-                this.LoadCompressedBlock(offsetBlock, destination, length);
-            }
-
-            return (ushort)(length + 3);
-        }
-
-        private void LoadMemoryUncompressed(ushort offset)
-        {
-            System.Diagnostics.Debug.WriteLine($"LoadMemoryUncompressed: offset={offset}");
-
-            var position = offset;
-            for (var block = 1; block < 4; ++block)
-            {
-                this.LoadMemoryUncompressed(position, block);
-                position += BlockSize;
-            }
-        }
-
-        private void LoadMemoryUncompressed(ushort offset, int block)
-        {
-            System.Diagnostics.Debug.WriteLine($"LoadMemoryUncompressed: offset={offset}, block={block}");
-
-            var start = (ushort)(block * BlockSize);
-            this.LoadUncompressedBlock(offset, start, BlockSize);
-        }
-
-        private void LoadUncompressedBlock(ushort source, ushort destination, ushort length)
-        {
-            System.Diagnostics.Debug.WriteLine($"LoadUncompressedBlock: source={source}, destination={destination:x4}, length={length:x4}");
-
-            for (ushort i = 0; i < length; ++i)
-            {
-                this.BUS.Poke(destination++, this.Peek(source++));
-            }
-        }
-
-        private void LoadCompressedBlock(ushort source, ushort destination, ushort length)
-        {
-            System.Diagnostics.Debug.WriteLine($"LoadCompressedBlock: source={source}, destination={destination:x4}, length={length:x4}");
-
-            var previous = 0x100;
-            for (var i = source; i < (length + source); ++i)
-            {
-                var current = this.ROM.Peek(i);
-                if (current == 0xed && previous == 0xed)
+                var current = this.FetchByteWindowed();
+                if (this.CompressedWindow)
                 {
-                    var repeats = this.Peek(++i);
-                    var value = this.Peek(++i);
-                    --destination;
-                    for (var j = 0; j < repeats; ++j)
-                    {
-                        this.BUS.Poke(destination++, value);
-                    }
-
-                    previous = 0x100;
+                    var repeats = this.FetchByteWindowed();
+                    if (this.FinishedWindow) break;
+                    var value = this.FetchByteWindowed();
+                    --destination;  // Overwrite the initial ED of the compressed marker
+                    for (int j = 0; j < repeats; ++j)
+                        board.Poke(destination++, value);
                 }
                 else
                 {
-                    this.BUS.Poke(destination++, current);
-                    previous = current;
+                    board.Poke(destination++, current);
                 }
             }
+        }
+
+        private void LoadMemoryUncompressed(Board board)
+        {
+            var destination = (ushort)board.ROM.Size;
+            while (!this.Finished)
+                board.Poke(destination++, this.FetchByte());
+        }
+
+        private void LoadMemoryV1(Board board)
+        {
+            if (this.Compressed)
+                this.LoadMemoryCompressedV1(board);
+            else
+                this.LoadMemoryUncompressed(board);
+        }
+
+        private void LoadMemoryCompressedV2(Board board)
+        {
+            Debug.Assert(this._hardwareMode == (byte)HardwareMode.FortyEightK);
+            var length = this.FetchWord();
+            var page = this.FetchByte();
+            this.ResetWindow();
+            var destination = this._block_addresses_48k[page];
+            Debug.Assert(destination != Impossible16);
+            var remaining = length;
+            while (remaining.Joined > 0)
+            {
+                var current = this.FetchByteWindowed();
+                remaining.Decrement();
+                if (this.CompressedWindow)
+                {
+                    var repeats = this.FetchByteWindowed();
+                    remaining.Decrement();
+                    var value = this.FetchByteWindowed();
+                    remaining.Decrement();
+                    --destination;  // Overwrite the initial ED of the compressed marker
+                    for (int j = 0; j < repeats; ++j)
+                        board.Poke((ushort)destination++, value);
+                }
+                else
+                {
+                    board.Poke((ushort)destination++, current);
+                }
+            }
+        }
+
+        private void LoadMemoryV2(Board board)
+        {
+            while (!this.Finished)
+                this.LoadMemoryCompressedV2(board);
         }
     }
 }

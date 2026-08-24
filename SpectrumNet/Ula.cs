@@ -130,7 +130,7 @@
 
         public static TimeSpan FrameLength => TimeSpan.FromSeconds(1 / FramesPerSecond);
 
-        public void UpdateBorder(int value) => this._borderColour = this._palette.GetColor(value, false);
+        public void SetBorder(int value) => this._borderColour = this._palette.GetColor(value, false);
 
         public uint[] Pixels { get; } = new uint[RasterWidth * RasterHeight];
 
@@ -275,7 +275,7 @@
             this.ResetF();
             this.ResetV();
             this.C = 0;
-            this.UpdateBorder(0);
+            this.SetBorder(0);
             this._flashing = false;
         }
 
@@ -383,7 +383,7 @@
             this._mic.Match(value & (byte)Bits.Bit3);
             this._speaker.Match(value & (byte)Bits.Bit4);
 
-            this.UpdateBorder(value & (byte)Mask.Three);
+            this.SetBorder(value & (byte)Mask.Three);
 
             this.BUS.Sound.Buzz(this._speaker, this.FrameCpuCycles);
         }

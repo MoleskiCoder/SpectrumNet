@@ -90,12 +90,12 @@
             cpu.A = this.FetchByte();
             cpu.F = this.FetchByte();
 
-            cpu.BC.Assign(this.FetchWord());
-            cpu.HL.Assign(this.FetchWord());
-            cpu.PC.Assign(this.FetchWord());
+            cpu.BC.Assign(this.FetchShort());
+            cpu.HL.Assign(this.FetchShort());
+            cpu.PC.Assign(this.FetchShort());
             this._version = cpu.PC.Joined == 0 ? 2 : 1;
 
-            cpu.SP.Assign(this.FetchWord());
+            cpu.SP.Assign(this.FetchShort());
 
             cpu.IV = this.FetchByte();
 
@@ -104,21 +104,21 @@
             this._misc1 = this._misc1 == 0xff ? (byte)1 : this._misc1;
             cpu.REFRESH &= (byte)(this.RefreshHigh << 7);
 
-            cpu.DE.Assign(this.FetchWord());
+            cpu.DE.Assign(this.FetchShort());
 
             cpu.Exx();
 
-            cpu.BC.Assign(this.FetchWord());
-            cpu.DE.Assign(this.FetchWord());
-            cpu.HL.Assign(this.FetchWord());
+            cpu.BC.Assign(this.FetchShort());
+            cpu.DE.Assign(this.FetchShort());
+            cpu.HL.Assign(this.FetchShort());
 
             cpu.ExxAF();
 
             cpu.A = this.FetchByte();
             cpu.F = this.FetchByte();
 
-            cpu.IY.Assign(this.FetchWord());
-            cpu.IX.Assign(this.FetchWord());
+            cpu.IY.Assign(this.FetchShort());
+            cpu.IX.Assign(this.FetchShort());
 
             cpu.IFF1 = this.FetchByte() != 0;
             cpu.IFF2 = this.FetchByte() != 0;
@@ -133,10 +133,10 @@
 
             if (this._version == 1) return;
 
-            this._additionalHeaderLength.Assign(this.FetchWord());
+            this._additionalHeaderLength.Assign(this.FetchShort());
             this._version = this._additionalHeaderLength.Joined == 23 ? 2 : 3;
 
-            cpu.PC.Assign(this.FetchWord());
+            cpu.PC.Assign(this.FetchShort());
 
             this._hardwareMode = this.FetchByte();
             if (this._hardwareMode != (byte)HardwareMode.FortyEightK)
@@ -239,7 +239,7 @@
         private void LoadMemoryCompressedV2(Board board)
         {
             Debug.Assert(this._hardwareMode == (byte)HardwareMode.FortyEightK);
-            var length = this.FetchWord();
+            var length = this.FetchShort();
             var page = this.FetchByte();
             this.ResetWindow();
             var destination = this._block_addresses_48k[page];

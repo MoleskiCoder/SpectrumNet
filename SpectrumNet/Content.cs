@@ -52,24 +52,24 @@
 
         public byte FetchByte() => this.FetchBytes(1)[0];
 
-        public abstract EightBit.Register16 ReadWord(ushort position);
-        public EightBit.Register16 ReadWord(int position) => this.ReadWord((ushort)position);
+        public abstract EightBit.Register16 ReadShort(ushort position);
+        public EightBit.Register16 ReadShort(int position) => this.ReadShort((ushort)position);
 
-        public List<EightBit.Register16> ReadWords(ushort position, ushort amount)
+        public List<EightBit.Register16> ReadShorts(ushort position, ushort amount)
         {
             List<EightBit.Register16> returned = new(amount);
             for (ushort i = 0; i < amount; ++i)
-                returned.Add(this.ReadWord(position + i * 2));
+                returned.Add(this.ReadShort(position + i * 2));
             return returned;
         }
 
-        public List<EightBit.Register16> FetchWords(ushort amount)
+        public List<EightBit.Register16> FetchShorts(ushort amount)
         {
-            var returned = this.ReadWords(this.Position, amount);
+            var returned = this.ReadShorts(this.Position, amount);
             this.Move(amount * sizeof(ushort));
             return returned;
         }
 
-        public EightBit.Register16 FetchWord() => this.FetchWords(1)[0];
+        public EightBit.Register16 FetchShort() => this.FetchShorts(1)[0];
     }
 }

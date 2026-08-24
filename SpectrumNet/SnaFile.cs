@@ -16,28 +16,28 @@ namespace SpectrumNet
             cpu.IV = this.FetchByte();
 
             // Alternate set first
-            cpu.HL.Assign(this.FetchWord());
-            cpu.DE.Assign(this.FetchWord());
-            cpu.BC.Assign(this.FetchWord());
-            cpu.AF.Assign(this.FetchWord());
+            cpu.HL.Assign(this.FetchShort());
+            cpu.DE.Assign(this.FetchShort());
+            cpu.BC.Assign(this.FetchShort());
+            cpu.AF.Assign(this.FetchShort());
 
             cpu.Exx();
 
             // Current set
-            cpu.HL.Assign(this.FetchWord());
-            cpu.DE.Assign(this.FetchWord());
-            cpu.BC.Assign(this.FetchWord());
+            cpu.HL.Assign(this.FetchShort());
+            cpu.DE.Assign(this.FetchShort());
+            cpu.BC.Assign(this.FetchShort());
 
-            cpu.IY.Assign(this.FetchWord());
-            cpu.IX.Assign(this.FetchWord());
+            cpu.IY.Assign(this.FetchShort());
+            cpu.IX.Assign(this.FetchShort());
 
             cpu.IFF2 = (this.FetchByte() >> 2) != 0;
             cpu.REFRESH = this.FetchByte();
 
             cpu.ExxAF();
 
-            cpu.AF.Assign(this.FetchWord()); // Current
-            cpu.SP.Assign(this.FetchWord());
+            cpu.AF.Assign(this.FetchShort()); // Current
+            cpu.SP.Assign(this.FetchShort());
             cpu.IM = this.FetchByte();
 
             this._border = this.FetchByte();

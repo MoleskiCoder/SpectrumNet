@@ -78,12 +78,26 @@ internal sealed partial class Game : SDL.IMainCallbacks<Game>
         appState.LoadROM();
         appState.LoadProgram();
 
+        SDL.LogInfo(SDL.LogCategory.Application, "Completed application initialisation");
+
         return SDL.AppResult.Continue;
     }
 
-    public void AppQuit(SDL.AppResult result) => this._computer.LowerPOWER();
+    public void AppQuit(SDL.AppResult result)
+    {
+        SDL.LogInfo(SDL.LogCategory.Application, "Terminating application");
+        this._computer.LowerPOWER();
+    }
 
-    public SDL.AppResult AppIterate() => this._computer.RunFrame();
+    public SDL.AppResult AppIterate()
+    {
+        SDL.LogDebug(SDL.LogCategory.Application, "Executing application frame");
+        return this._computer.RunFrame();
+    }
 
-    public SDL.AppResult AppEvent(ref SDL.Event @event) => this._computer.HandleEvent(@event);
+    public SDL.AppResult AppEvent(ref SDL.Event @event)
+    {
+        SDL.LogDebug(SDL.LogCategory.Application, "Handling application event");
+        return this._computer.HandleEvent(@event);
+    }
 }

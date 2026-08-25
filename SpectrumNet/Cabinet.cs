@@ -7,7 +7,7 @@
         private readonly ColorPalette _palette = new();
 
         public Cabinet(Configuration configuration)
-        : base(configuration.VerboseMode)
+        : base(configuration.LoggingLevel)
         {
             this.Settings = configuration;
             this.Motherboard = new Board(this._palette, configuration);

@@ -15,10 +15,6 @@
             Unknown = -1
         }
 
-        private const int Impossible8 = 0x100; // impossible value for a byte
-        private const int Impossible16 = 0x10000; // impossible value for a word
-
-
         private readonly string _path = path;
 
         private int _version;   // Illegal, by default!
@@ -31,28 +27,28 @@
         private byte _hardwareMode;
         private byte _emulationMode;
 
-        private readonly int[] _window =
+        private readonly byte?[] _window =
         {
-            Impossible8,
-            Impossible8,
-            Impossible8,
-            Impossible8
+            null,
+            null,
+            null,
+            null
         };
 
-        private readonly int[] _block_addresses_48k =
+        private readonly ushort?[] _block_addresses_48k =
         {
             0,				// 0	(48K ROM)
-		    Impossible16,	// 1	(Interface I, Disciple or Plus D ROM)
-		    Impossible16,	// 2
-		    Impossible16,	// 3
+		    null,	        // 1	(Interface I, Disciple or Plus D ROM)
+		    null,	        // 2
+		    null,	        // 3
 		    0x8000,			// 4
 		    0xc000,			// 5
-		    Impossible16,	// 6
-		    Impossible16,	// 7
+		    null,	        // 6
+		    null,	        // 7
 		    0x4000,			// 8
-		    Impossible16,	// 9
-		    Impossible16,	// 10
-		    Impossible16,	// 11	(Multiface ROM)
+		    null,	        // 9
+		    null,	        // 10
+		    null,	        // 11	(Multiface ROM)
 	    };
 
         private int RefreshHigh => this._misc1 & (byte)EightBit.Mask.One;
@@ -69,7 +65,7 @@
             // registers, otherwise power on defaults will override
             // loaded values.
             if (!board.CPU.Powered)
-                throw new InvalidOperationException("Whoops: CPU has not been powered on.");
+                throw new InvalidOperationException("CPU has not been powered on.");
 
             this.LoadRegisters(board.CPU);
             this.LoadMemory(board);
@@ -129,9 +125,8 @@
             cpu.Exx();
             cpu.ExxAF();
 
-            Debug.Assert(this._version >= 1);
-
             if (this._version == 1) return;
+            Debug.Assert(this._version > 1);
 
             this._additionalHeaderLength.Assign(this.FetchShort());
             this._version = this._additionalHeaderLength.Joined == 23 ? 2 : 3;
@@ -139,8 +134,8 @@
             cpu.PC.Assign(this.FetchShort());
 
             this._hardwareMode = this.FetchByte();
-            if (this._hardwareMode != (byte)HardwareMode.FortyEightK)
-                throw new InvalidDataException("Only 48K ZX Spectrum is supported");
+            if (this._hardwareMode > (byte)HardwareMode.FortyEightK_IF1)
+                throw new InvalidDataException("Only 48K ZX Spectrum (with or without Interface I) is supported");
 
             var state_35 = this.FetchByte(); // offset 35
             var state_36 = this.FetchByte(); // offset 36
@@ -166,16 +161,16 @@
                     this.LoadMemoryV2(board);
                     break;
                 default:
-                    throw new InvalidDataException("Only V1 or V2 Z80 files are handled.");
+                    throw new InvalidDataException($"Only V1 or V2 Z80 files are handled ({this._version} is unsupported).");
             }
         }
 
         private void ResetWindow()
         {
-            this._window[0] = Impossible8;
-            this._window[1] = Impossible8;
-            this._window[2] = Impossible8;
-            this._window[3] = Impossible8;
+            this._window[0] = null;
+            this._window[1] = null;
+            this._window[2] = null;
+            this._window[3] = null;
         }
 
         private bool CompressedWindow =>
@@ -184,7 +179,7 @@
         private bool FinishedWindow =>
             (this._window[0] == 0x00) && (this._window[1] == 0xed) && (this._window[2] == 0xed) && (this._window[3] == 0x00);
 
-        private void AdjustWindow(int current)
+        private void AdjustWindow(byte? current)
         {
             for (int i = 2; i >= 0; --i)
                 this._window[i + 1] = this._window[i];
@@ -238,12 +233,11 @@
 
         private void LoadMemoryCompressedV2(Board board)
         {
-            Debug.Assert(this._hardwareMode == (byte)HardwareMode.FortyEightK);
+            Debug.Assert((this._hardwareMode == (byte)HardwareMode.FortyEightK) || (this._hardwareMode == (byte)HardwareMode.FortyEightK_IF1));
             var length = this.FetchShort();
             var page = this.FetchByte();
             this.ResetWindow();
-            var destination = this._block_addresses_48k[page];
-            Debug.Assert(destination != Impossible16);
+            var destination = this._block_addresses_48k[page] ?? throw new InvalidDataException($"Invalid block address page ({page}.");
             var remaining = length;
             while (remaining.Joined > 0)
             {
@@ -257,11 +251,11 @@
                     remaining.Decrement();
                     --destination;  // Overwrite the initial ED of the compressed marker
                     for (int j = 0; j < repeats; ++j)
-                        board.Poke((ushort)destination++, value);
+                        board.Poke(destination++, value);
                 }
                 else
                 {
-                    board.Poke((ushort)destination++, current);
+                    board.Poke(destination++, current);
                 }
             }
         }

@@ -2,35 +2,11 @@
 {
     using SDL3;
 
-    internal sealed class ColorPalette
+    internal sealed class ColorPalette : AbstractColorPalette<uint>
     {
-        internal enum Index
-        {
-            Black,
-            Blue,
-            Red,
-            Magenta,
-            Green,
-            Cyan,
-            Yellow,
-            White
-        }
-
-        public const int Bright = 0x28;
-
-        private readonly uint[] _colors = new uint[16];
-
         public ColorPalette()
         {
         }
-
-        public uint GetColor(int index, bool bright) => this.GetColor(bright ? index + 8 : index);
-
-        public uint GetColor(Index index, bool bright) => this.GetColor((int)index, bright);
-
-        public uint GetColor(int index) => this._colors[index];
-
-        public uint GetColor(Index index) => this.GetColor((int)index);
 
         public void Load(IntPtr hardware)
         {

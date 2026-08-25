@@ -1,6 +1,5 @@
 ﻿namespace SpectrumNet
 {
-    using SDL3;
     using System.Diagnostics;
 
     internal sealed class Board : EightBit.Bus, IDisposable
@@ -44,7 +43,7 @@
 
         public Ula ULA { get; }
 
-        public Buzzer Sound { get; } = new Buzzer(Ula.FramesPerSecond, Ula.CpuClockRate, SDL.AudioFormat.AudioU8);
+        public Buzzer Sound { get; } = new();
 
         public EightBit.InputOutput Ports { get; } = new EightBit.InputOutput();
 

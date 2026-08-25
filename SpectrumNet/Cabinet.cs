@@ -44,8 +44,6 @@
         public override void RaisePOWER()
         {
             base.RaisePOWER();
-            this._palette.Load(PixelFormat);
-            this.Motherboard.Initialize();
             this.Motherboard.RaisePOWER();
         }
 
@@ -53,6 +51,13 @@
         {
             Motherboard.LowerPOWER();
             base.LowerPOWER();
+        }
+
+        public override void Initialise()
+        {
+            base.Initialise();
+            this._palette.Load(PixelFormat);
+            this.Motherboard.Initialize();
         }
 
         protected override bool HandleJoyButtonDown(SDL.JoyButtonEvent e)

@@ -6,8 +6,6 @@
     {
         private readonly ColorPalette _palette = new();
 
-        private bool _disposed;
-
         public Cabinet(Configuration configuration)
         : base(configuration.VerboseMode)
         {
@@ -55,21 +53,6 @@
         {
             Motherboard.LowerPOWER();
             base.LowerPOWER();
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (!this._disposed)
-            {
-                if (disposing)
-                {
-                    this.Motherboard.Dispose();
-                }
-
-                this._disposed = true;
-            }
-
-            base.Dispose(disposing);
         }
 
         protected override bool HandleJoyButtonDown(SDL.JoyButtonEvent e)
@@ -207,7 +190,6 @@
             }
             return handled;
         }
-
 
         protected override void RunRasterLines() =>this.Motherboard.RenderLines();
     }

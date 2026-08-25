@@ -4,16 +4,21 @@
     using SDL3;
     using System;
 
-    internal sealed class Buzzer : AbstractBuzzer<byte>, IDisposable
+    internal sealed class Buzzer : AbstractBuzzer<byte>
     {
         private const int AudioFrequency = 44100;
 
-        private readonly ScopedHandle _stream = new(SDL.DestroyAudioStream);
+        private readonly SDL.AudioFormat _format;
 
-        private bool _disposed;
+        private readonly ScopedHandle _stream = new(SDL.DestroyAudioStream);
 
         public Buzzer(SDL.AudioFormat format = SDL.AudioFormat.AudioU8)
         : base(AudioFrequency)
+        {
+            this._format = format;
+        }
+
+        public override void Initialise()
         {
             SDL.LogInfo(SDL.LogCategory.Audio, $"Audio frequency: {this._audioFrequency}");
             SDL.LogInfo(SDL.LogCategory.Audio, $"CPU Clock rate: {this._clockRate}");
@@ -22,7 +27,7 @@
 
             SDL.AudioSpec want;
             want.Freq = AudioFrequency;
-            want.Format = format;
+            want.Format = this._format;
             want.Channels = 1;
 
             this._stream.Handle = SDL.OpenAudioDeviceStream(SDL.AudioDeviceDefaultPlayback, want, null, IntPtr.Zero);
@@ -31,7 +36,13 @@
             SDL.LogInfo(SDL.LogCategory.Audio, $"Samples per frame: {this.SamplesPerFrame}");
             SDL.LogInfo(SDL.LogCategory.Audio, $"Samples per frame (cast): {(ulong)this.SamplesPerFrame}");
 
-            this.Stop();
+            base.Initialise();
+        }
+
+        public override void Terminate()
+        {
+            base.Terminate();
+            this._stream.Dispose();
         }
 
         protected override void PlayBuffer()
@@ -59,35 +70,16 @@
             }
         }
 
-        public override void Stop()
+        protected override void Stop()
         {
             var success = SDL.PauseAudioStreamDevice(this._stream);
             Gaming.Wrapper.MaybeThrowException(success, "Unable to pause audio device stream");
         }
 
-        public override void Start()
+        protected override void Start()
         {
             var success = SDL.ResumeAudioStreamDevice(this._stream);
             Gaming.Wrapper.MaybeThrowException(success, "Unable to resume audio device stream");
-        }
-
-        public void Dispose()
-        {
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool disposing)
-        {
-            if (!this._disposed)
-            {
-                if (disposing)
-                {
-                    this._stream.Dispose();
-                }
-
-                this._disposed = true;
-            }
         }
     }
 }

@@ -2,7 +2,7 @@
 {
     using EightBit;
 
-    internal abstract class AbstractBuzzer<AudioT> where AudioT : System.Numerics.IMinMaxValue<AudioT>
+    internal abstract class AbstractBuzzer<AudioT> : Device where AudioT : System.Numerics.IMinMaxValue<AudioT>
     {
         protected readonly int _audioFrequency;
         protected readonly float _frameRate;
@@ -23,7 +23,7 @@
 
         protected float SamplesPerFrame => (float)this._audioFrequency / this._frameRate + 1.0f;
 
-        public AbstractBuzzer(int audioFrequency)
+        protected AbstractBuzzer(int audioFrequency)
         : this(audioFrequency, Ula.FramesPerSecond, Ula.CpuClockRate)
         { }
 
@@ -38,15 +38,31 @@
             this._buffer = new AudioT[(ulong)this.SamplesPerFrame];
         }
 
+        public override void RaisePOWER()
+        {
+            base.RaisePOWER();
+            this.Initialise();
+        }
+
+        public override void LowerPOWER()
+        {
+            this.Terminate();
+            base.LowerPOWER();
+        }
+
+        public virtual void Initialise() => this.Start();
+
+        public virtual void Terminate() => this.Stop();
+
         protected abstract void PlayBuffer();
 
         protected abstract void Flush();
 
         protected abstract void Clear();
 
-        public abstract void Stop();
+        protected abstract void Stop();
 
-        public abstract void Start();
+        protected abstract void Start();
 
         public void Buzz(PinLevel state, int cycle)
         {

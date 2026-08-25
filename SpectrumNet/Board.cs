@@ -2,7 +2,7 @@
 {
     using System.Diagnostics;
 
-    internal sealed class Board : EightBit.Bus, IDisposable
+    internal sealed class Board : EightBit.Bus
     {
         // 48K ROM LD-BYTES entry point, trapped for instant tape loading
         private const ushort LdBytesAddress = 0x0556;
@@ -20,8 +20,6 @@
         private readonly EightBit.MemoryMapping _romMapping;
         private readonly EightBit.MemoryMapping _vramMapping;
         private readonly EightBit.MemoryMapping _wramMapping;
-
-        private bool _disposed;
 
         public Board(ColorPalette palette, Configuration configuration)
         {
@@ -55,12 +53,6 @@
 
         public int NumberOfExpansions => this._expansions.Count;
 
-        public void Dispose()
-        {
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         public override void Initialize()
         {
             var romDirectory = this._configuration.RomDirectory;
@@ -84,19 +76,19 @@
                 expansion.RaisePOWER();
             }
 
+            this.Sound.RaisePOWER();
             this.ULA.RaisePOWER();
             this.CPU.RaisePOWER();
             this.CPU.LowerRESET();
             this.CPU.RaiseINT();
             this.CPU.RaiseNMI();
-
-            this.Sound.Start();
         }
 
         public override void LowerPOWER()
         {
             this.CPU.LowerPOWER();
             this.ULA.LowerPOWER();
+            this.Sound.LowerPOWER();
 
             foreach (var expansion in this._expansions)
             {
@@ -164,19 +156,6 @@
             }
 
             return this._wramMapping;
-        }
-
-        private void Dispose(bool disposing)
-        {
-            if (!this._disposed)
-            {
-                if (disposing)
-                {
-                    this.Sound.Dispose();
-                }
-
-                this._disposed = true;
-            }
         }
 
         private void RunCycle()

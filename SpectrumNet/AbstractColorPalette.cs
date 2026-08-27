@@ -24,8 +24,6 @@
 
         public ColorT GetColor(int index, bool bright) => this.GetColor(bright ? index + 8 : index);
 
-        public ColorT GetColor(Index index, bool bright) => this.GetColor((int)index, bright);
-
         public ColorT GetColor(int index) => this._colors[index];
 
         public ColorT GetColor(Index index) => this.GetColor((int)index);

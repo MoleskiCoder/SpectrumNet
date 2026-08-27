@@ -138,10 +138,7 @@
             this._tape = null;
         }
 
-        public void RenderLines()
-        {
-            ULA.RenderLines();
-        }
+        public void RenderLines() => this.ULA.RenderLines();
 
         public override EightBit.MemoryMapping Mapping(ushort absolute)
         {

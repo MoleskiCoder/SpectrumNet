@@ -30,8 +30,6 @@
 
         public const int TotalHeight = VerticalRetraceLines + RasterHeight;
         public const int TotalHorizontalClocks = HorizontalRetraceClocks + RasterWidth;
-        public const int TotalFrameClocks = TotalHeight * TotalHorizontalClocks;
-        public const float CalculatedClockFrequency = TotalFrameClocks * FramesPerSecond;
 
         private readonly int[] _scanLineAddresses = new int[256];
         private readonly int[] _attributeAddresses = new int[256];
@@ -96,10 +94,7 @@
 	        return masked == 0b0100000000000000;
         }
 
-        private void AddContention(int cycles)
-        {
-	        this._contention += 2 * cycles;
-        }
+        private void AddContention(int cycles) => this._contention += 2 * cycles;
 
         private bool MaybeApplyContention()
         {
@@ -126,8 +121,6 @@
         }
 
         public event EventHandler<EventArgs>? Proceed;
-
-        public static TimeSpan FrameLength => TimeSpan.FromSeconds(1 / FramesPerSecond);
 
         public void SetBorder(int value) => this._borderColour = this._palette.GetColor(value, false);
 

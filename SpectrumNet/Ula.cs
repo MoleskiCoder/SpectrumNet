@@ -2,13 +2,8 @@
 {
     using SDL3;
 
-    internal sealed class Ula : AbstractUla<uint, SDL.Keycode>
+    internal sealed class Ula(ColorPalette palette, Board bus) : AbstractUla<uint, SDL.Keycode>(palette, bus)
     {
-        public Ula(ColorPalette palette, Board bus)
-        : base(palette, bus)
-        {
-        }
-
         protected override void InitialiseKeyboardMapping()
         {
             // Left side

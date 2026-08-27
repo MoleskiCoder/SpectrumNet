@@ -19,9 +19,7 @@
 
         protected float SampleLength => (float)this._audioFrequency / (float)this._clockRate;
 
-        protected float CyclesPerSample => (float)this._clockRate / (float)this._audioFrequency;
-
-        protected float SamplesPerFrame => (float)this._audioFrequency / this._frameRate + 1.0f;
+        protected ulong SamplesPerFrame => (ulong)((float)this._audioFrequency / this._frameRate + 1.0f);
 
         protected AbstractBuzzer(int audioFrequency)
         : this(audioFrequency, Ula.FramesPerSecond, Ula.CpuClockRate)
@@ -35,7 +33,7 @@
             this._frameRate = frameRate;
             this._clockRate = clockRate;
 
-            this._buffer = new AudioT[(ulong)this.SamplesPerFrame];
+            this._buffer = new AudioT[this.SamplesPerFrame];
         }
 
         public override void RaisePOWER()

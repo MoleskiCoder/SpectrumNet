@@ -4,26 +4,19 @@
     using SDL3;
     using System;
 
-    internal sealed class Buzzer : AbstractBuzzer<byte>
+    internal sealed class Buzzer(SDL.AudioFormat format = SDL.AudioFormat.AudioU8) : AbstractBuzzer<byte>(AudioFrequency)
     {
         private const int AudioFrequency = 44100;
 
-        private readonly SDL.AudioFormat _format;
+        private readonly SDL.AudioFormat _format = format;
 
         private readonly ScopedHandle _stream = new(SDL.DestroyAudioStream);
-
-        public Buzzer(SDL.AudioFormat format = SDL.AudioFormat.AudioU8)
-        : base(AudioFrequency)
-        {
-            this._format = format;
-        }
 
         public override void Initialise()
         {
             SDL.LogInfo(SDL.LogCategory.Audio, $"Audio frequency: {this._audioFrequency}");
             SDL.LogInfo(SDL.LogCategory.Audio, $"CPU Clock rate: {this._clockRate}");
             SDL.LogInfo(SDL.LogCategory.Audio, $"Sample length: {this.SampleLength}");
-            SDL.LogInfo(SDL.LogCategory.Audio, $"Cycles per sample: {this.CyclesPerSample}");
 
             SDL.AudioSpec want;
             want.Freq = AudioFrequency;
@@ -34,7 +27,6 @@
             Wrapper.MaybeThrowException(this._stream, "Unable to open audio stream");
 
             SDL.LogInfo(SDL.LogCategory.Audio, $"Samples per frame: {this.SamplesPerFrame}");
-            SDL.LogInfo(SDL.LogCategory.Audio, $"Samples per frame (cast): {(ulong)this.SamplesPerFrame}");
 
             base.Initialise();
         }

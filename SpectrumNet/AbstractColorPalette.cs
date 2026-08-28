@@ -22,7 +22,7 @@
         {
         }
 
-        public ColorT GetColor(int index, bool bright) => this.GetColor(bright ? index + 8 : index);
+        public ColorT GetColor(int index, bool bright = false) => this.GetColor(bright ? index + 8 : index);
 
         public ColorT GetColor(int index) => this._colors[index];
 

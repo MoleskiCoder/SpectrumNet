@@ -8,7 +8,6 @@
         private const ushort LdBytesAddress = 0x0556;
 
         private readonly Configuration _configuration;
-        private readonly ColorPalette _palette;
         private readonly List<Expansion> _expansions = [];
 
         private readonly Z80.Disassembler? _disassembler;
@@ -21,12 +20,11 @@
         private readonly EightBit.MemoryMapping _vramMapping;
         private readonly EightBit.MemoryMapping _wramMapping;
 
-        public Board(ColorPalette palette, Configuration configuration)
+        public Board(Configuration configuration)
         {
-            this._palette = palette;
             this._configuration = configuration;
             this.CPU = new Z80.Z80(this, this.Ports);
-            this.ULA = new Ula(this._palette, this);
+            this.ULA = new Ula(this);
             if (this._configuration.DebugMode)
             {
                 this._disassembler = new Z80.Disassembler(this);

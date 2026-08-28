@@ -33,12 +33,14 @@
 
         private readonly int[] _scanLineAddresses = new int[256];
         private readonly int[] _attributeAddresses = new int[256];
-        private readonly AbstractColorPalette<ColorT> _palette;
+
+        protected abstract AbstractColorPalette<ColorT> Palette { get; }
+
         private bool _flashing;
         private int _frameCounter;   // 4 bits
         private int _verticalCounter; // 9 bits
         private int _horizontalCounter; // 9 bits
-        private ColorT _borderColour;
+        protected ColorT _borderColour;
 
         private int _contention;
         bool _accessingVRAM;
@@ -53,12 +55,9 @@
         protected readonly Dictionary<byte, KeyT[]> _keyboardMapping = [];
         private readonly HashSet<KeyT> _keyboardRaw = [];
 
-        protected AbstractUla(AbstractColorPalette<ColorT> palette, Board bus)
+        protected AbstractUla(Board bus)
         {
-            this._palette = palette ?? throw new ArgumentNullException(nameof(palette));
             this.BUS = bus ?? throw new ArgumentNullException(nameof(bus));
-
-            this._borderColour = this._palette.GetColor(AbstractColorPalette<ColorT>.Index.Black);
 
             this.RaisedPOWER += this.Ula_RaisedPOWER;
 
@@ -122,7 +121,7 @@
 
         public event EventHandler<EventArgs>? Proceed;
 
-        public void SetBorder(int value) => this._borderColour = this._palette.GetColor(value, false);
+        public void SetBorder(int value) => this._borderColour = this.Palette.GetColor(value);
 
         public ColorT[] Pixels { get; } = new ColorT[RasterWidth * RasterHeight];
 
@@ -398,8 +397,8 @@
                 var paper = (attribute >> 3) & (int)Mask.Three;
                 var bright = (attribute & (byte)Bits.Bit6) != 0;
                 var flashing = (attribute & (byte)Bits.Bit7) != 0;
-                var background = this._palette.GetColor(flashing && this._flashing ? ink : paper, bright);
-                var foreground = this._palette.GetColor(flashing && this._flashing ? paper : ink, bright);
+                var background = this.Palette.GetColor(flashing && this._flashing ? ink : paper, bright);
+                var foreground = this.Palette.GetColor(flashing && this._flashing ? paper : ink, bright);
 
                 var bitmap = this.BUS.VRAM.Peek((ushort)bitmapAddress++);
                 var byteX = currentByte << 3;

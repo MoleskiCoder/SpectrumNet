@@ -2,20 +2,11 @@
 {
     using SDL3;
 
-    internal sealed class Cabinet : Gaming.Game
+    internal sealed class Cabinet(Configuration configuration) : Gaming.Game(configuration.LoggingLevel)
     {
-        private readonly ColorPalette _palette = new();
+        public Board Motherboard { get; } = new Board(configuration);
 
-        public Cabinet(Configuration configuration)
-        : base(configuration.LoggingLevel)
-        {
-            this.Settings = configuration;
-            this.Motherboard = new Board(this._palette, configuration);
-        }
-
-        public Board Motherboard { get; }
-
-        public Configuration Settings { get; }
+        public Configuration Settings { get; } = configuration;
 
         public void Plug(Expansion expansion) => this.Motherboard.Plug(expansion);
 
@@ -26,6 +17,8 @@
         public void LoadZ80(string path) => this.Motherboard.LoadZ80(path);
 
         public void InsertTape(string path) => this.Motherboard.InsertTape(path);
+
+        protected override SDL.PixelFormat PixelFormat => SDL.PixelFormat.ARGB8888;
 
         public override float FramesPerSecond => Ula.FramesPerSecond;
 
@@ -56,7 +49,6 @@
         public override void Initialise()
         {
             base.Initialise();
-            this._palette.Load(PixelFormat);
             this.Motherboard.Initialize();
         }
 

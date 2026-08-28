@@ -3,8 +3,9 @@
     using Gaming;
     using SDL3;
     using System;
+    using System.Runtime.InteropServices;
 
-    internal sealed class Buzzer(SDL.AudioFormat format = SDL.AudioFormat.AudioU8) : AbstractBuzzer<byte>(AudioFrequency)
+    internal sealed class Buzzer(SDL.AudioFormat format = SDL.AudioFormat.AudioF32LE) : AbstractBuzzer(AudioFrequency)
     {
         private const int AudioFrequency = 44100;
 
@@ -40,7 +41,9 @@
         protected override void PlayBuffer()
         {
             this.Clear();   // Avoid audio "drift"
-            var success = SDL.PutAudioStreamData(this._stream, this._buffer, this._buffer.Length);
+            var bytes = MemoryMarshal.Cast<float, byte>(this._buffer);
+            var count = this._buffer.Length * sizeof(float);
+            var success = SDL.PutAudioStreamData(this._stream, bytes, count);
             Wrapper.MaybeThrowException(success, "Unable to put audio data");
         }
 

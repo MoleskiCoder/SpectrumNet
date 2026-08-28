@@ -2,20 +2,20 @@
 {
     using EightBit;
 
-    internal abstract class AbstractBuzzer<AudioT> : Device where AudioT : System.Numerics.IMinMaxValue<AudioT>
+    internal abstract class AbstractBuzzer : Device
     {
         protected readonly int _audioFrequency;
         protected readonly float _frameRate;
         protected readonly int _clockRate;
 
-        protected AudioT LowLevel = AudioT.MinValue;
-        protected AudioT HighLevel = AudioT.MaxValue;
+        protected float LowLevel = -0.5f;
+        protected float HighLevel = +0.5f;
 
-        protected readonly AudioT[] _buffer;
+        protected readonly float[] _buffer;
 
         private int _lastSample;    // position in buffer
 
-        protected AudioT _lastLevel;
+        protected float _lastLevel;
 
         protected float SampleLength => (float)this._audioFrequency / (float)this._clockRate;
 
@@ -33,7 +33,7 @@
             this._frameRate = frameRate;
             this._clockRate = clockRate;
 
-            this._buffer = new AudioT[this.SamplesPerFrame];
+            this._buffer = new float[this.SamplesPerFrame];
         }
 
         public override void RaisePOWER()
@@ -75,14 +75,14 @@
             this._lastSample = 0;
         }
 
-        private void Buzz(AudioT value, int sample)
+        private void Buzz(float value, int sample)
         {
             this.FillBuffer(this._lastSample, sample, this._lastLevel);
             this._lastSample = sample;
             this._lastLevel = value;
         }
 
-        private void FillBuffer(int from, int to, AudioT value)
+        private void FillBuffer(int from, int to, float value)
         {
             var samples = this._buffer.AsSpan();
             var section = samples[from..to];

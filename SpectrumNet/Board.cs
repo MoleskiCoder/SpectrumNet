@@ -1,5 +1,6 @@
 ﻿namespace SpectrumNet
 {
+    using SDL3;
     using System.Diagnostics;
 
     internal sealed class Board : EightBit.Bus
@@ -25,10 +26,7 @@
             this._configuration = configuration;
             this.CPU = new Z80.Z80(this, this.Ports);
             this.ULA = new Ula(this);
-            if (this._configuration.DebugMode)
-            {
-                this._disassembler = new Z80.Disassembler(this);
-            }
+            this._disassembler = new Z80.Disassembler(this);
 
             this._romMapping = new(this.ROM, 0x0000, 0xffff, EightBit.AccessLevel.ReadOnly);
             this._vramMapping = new(this.VRAM, 0x4000, 0xffff, EightBit.AccessLevel.ReadWrite);
@@ -37,7 +35,7 @@
 
         public Z80.Z80 CPU { get; }
 
-        public Ula ULA { get; }
+        public AbstractUla<uint, SDL.Keycode> ULA { get; }
 
         public Buzzer Sound { get; } = new();
 

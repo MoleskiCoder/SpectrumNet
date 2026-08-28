@@ -18,7 +18,7 @@
 
         public void InsertTape(string path) => this.Motherboard.InsertTape(path);
 
-        protected override SDL.PixelFormat PixelFormat => SDL.PixelFormat.ARGB8888;
+        protected override SDL.PixelFormat PixelFormat => ColorPalette.PixelFormat;
 
         public override float FramesPerSecond => Ula.FramesPerSecond;
 

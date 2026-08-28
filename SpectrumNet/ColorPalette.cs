@@ -5,15 +5,14 @@
 
     internal sealed class ColorPalette : AbstractColorPalette<uint>
     {
-        private readonly SDL.PixelFormat _pixelFormat = SDL.PixelFormat.ARGB8888;
-        private readonly IntPtr _pixelFormatDetails = IntPtr.Zero;
+        public const SDL.PixelFormat PixelFormat = SDL.PixelFormat.ARGB8888;
 
-        public IntPtr PixelFormatDetails => this._pixelFormatDetails;
+        public IntPtr PixelFormatDetails { get; }
 
         public ColorPalette()
         {
-            this._pixelFormatDetails = SDL.GetPixelFormatDetails(this._pixelFormat);
-            Wrapper.MaybeThrowException(this._pixelFormatDetails, "Unable to obtain pixel format details");
+            this.PixelFormatDetails = SDL.GetPixelFormatDetails(PixelFormat);
+            Wrapper.MaybeThrowException(this.PixelFormatDetails, "Unable to obtain pixel format details");
             this.Load();
         }
 

@@ -13,8 +13,6 @@
 
         private TapeFile? _tape;
 
-        private int _allowed;
-
         public Board(Configuration configuration)
         : base(configuration.DebugMode)
         {
@@ -101,12 +99,6 @@
         }
 
         public void RenderLines() => this.ULA.RenderLines();
-
-        private void RunCycle()
-        {
-            var taken = this.CPU.Run(++this._allowed);
-            this._allowed -= taken;
-        }
 
         private void ULA_Proceed(object? sender, EventArgs e) => this.RunCycle();
 

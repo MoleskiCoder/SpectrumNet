@@ -22,7 +22,7 @@
         private const int HorizontalRetraceClocks = 96;
         private const int VerticalRetraceLines = 8;
 
-        private const int InterruptDuration = 64;   // 32 CPU cycles
+        internal const int InterruptDuration = 64;   // 32 CPU cycles
 
         private const int BytesPerLine = ActiveRasterWidth / 8;
         private const ushort AttributeAddress = 0x1800;

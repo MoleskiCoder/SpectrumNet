@@ -11,6 +11,7 @@
         protected readonly EightBit.MemoryMapping _vramMapping;
         protected readonly EightBit.MemoryMapping _wramMapping;
 
+        private int _allowed;
 
         public AbstractBoard(bool disassembling)
         {
@@ -83,5 +84,12 @@
             var disassembly = this._disassembler.Disassemble(this.CPU);
             System.Console.WriteLine($"{state} {disassembly}");
         }
+
+        protected void RunCycle()
+        {
+            var taken = this.CPU.Run(++this._allowed);
+            this._allowed -= taken;
+        }
+
     }
 }

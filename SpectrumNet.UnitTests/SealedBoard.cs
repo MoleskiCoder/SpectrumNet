@@ -16,6 +16,12 @@
 
         public AbstractBuzzer Sound { get; } = new SealedBuzzer(44100);
 
+        public override void Initialize()
+        {
+            base.Initialize();
+            this.ULA.Proceed += this.ULA_Proceed;
+        }
+
         public override void RaisePOWER()
         {
             base.RaisePOWER();
@@ -29,5 +35,7 @@
             this.Sound.LowerPOWER();
             base.LowerPOWER();
         }
+
+        private void ULA_Proceed(object? sender, EventArgs e) => this.RunCycle();
     }
 }

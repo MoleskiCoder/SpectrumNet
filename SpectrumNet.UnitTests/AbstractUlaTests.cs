@@ -1,19 +1,14 @@
 ﻿namespace SpectrumNet.UnitTests
 {
 
-[TestClass]
+    [TestClass]
     public sealed class AbstractUlaTests
     {
-        private readonly Configuration _configuration = new();
-        private readonly SealedBuzzer _buzzer = new(44100);
-        private readonly SealedColorPalette _palette = new();
         private readonly SealedBoard _board;
-        //private readonly SealedUla _ula;
 
         public AbstractUlaTests()
         {
             this._board = new SealedBoard();
-            //this._ula = new SealedUla(this._board);
         }
 
         [TestInitialize]
@@ -29,9 +24,8 @@
         }
 
         [TestMethod]
-        public void TestIntDuration()
+        public void TestUlaPowersUp()
         {
-            //Assert.IsTrue(this._ula.Powered);
             Assert.IsTrue(this._board.ULA.Powered);
         }
     }

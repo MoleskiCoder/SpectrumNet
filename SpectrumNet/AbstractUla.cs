@@ -137,14 +137,16 @@
 
         private int Contention => this._contention;
 
-        private int FrameUlaCycles => TotalHorizontalClocks * this.V + this.C;
-        private int FrameCpuCycles => this.FrameUlaCycles / 2;
+        internal int FrameUlaCycles => TotalHorizontalClocks * this.V + this.C;
+        internal int FrameCpuCycles => this.FrameUlaCycles / 2;
 
-        private ref int F => ref this._frameCounter;
+        internal bool Flashing => this._flashing;
 
-        private ref int V => ref this._verticalCounter;
+        internal ref int F => ref this._frameCounter;
 
-        private ref int C => ref this._horizontalCounter;
+        internal ref int V => ref this._verticalCounter;
+
+        internal ref int C => ref this._horizontalCounter;
 
         private void ProcessActiveLine() => this.ProcessActiveLine(this.V + TopRasterBorder);
 

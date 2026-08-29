@@ -19,7 +19,7 @@
         private const int InterruptDuration = 64;   // 32 CPU cycles
 
         private const int BytesPerLine = ActiveRasterWidth / 8;
-        private const int AttributeAddress = 0x1800;
+        private const ushort AttributeAddress = 0x1800;
 
         public const float FramesPerSecond = 50.08f;
         public const int UlaClockRate = 7000000; // 7Mhz
@@ -31,8 +31,8 @@
         public const int TotalHeight = VerticalRetraceLines + RasterHeight;
         public const int TotalHorizontalClocks = HorizontalRetraceClocks + RasterWidth;
 
-        private readonly int[] _scanLineAddresses = new int[256];
-        private readonly int[] _attributeAddresses = new int[256];
+        private readonly ushort[] _scanLineAddresses = new ushort[256];
+        private readonly ushort[] _attributeAddresses = new ushort[256];
 
         protected abstract AbstractColorPalette<ColorT> Palette { get; }
 
@@ -88,7 +88,7 @@
         {
 	        // Contended area is between 0x4000 (0100000000000000)
 	        //						and  0x7fff (0111111111111111)
-	        var mask = (Bits.Bit15 | Bits.Bit14);
+	        var mask = Bits.Bit15 | Bits.Bit14;
             var masked = address & (ushort)mask;
 	        return masked == 0b0100000000000000;
         }
@@ -379,10 +379,10 @@
             this._accessingVRAM = true;
 
 	        // Position in VRAM
-	        var addressY = y - TopRasterBorder;
-            System.Diagnostics.Debug.Assert(addressY<ActiveRasterHeight);
-            var bitmapAddressY = this._scanLineAddresses[addressY];
-            var attributeAddressY = this._attributeAddresses[addressY];
+	        var indexY = y - TopRasterBorder;
+            System.Diagnostics.Debug.Assert(indexY < ActiveRasterHeight);
+            var bitmapAddressY = this._scanLineAddresses[indexY];
+            var attributeAddressY = this._attributeAddresses[indexY];
 
             // Position in pixel render 
             var pixelBase = LeftRasterBorder + (y * RasterWidth);
@@ -392,7 +392,7 @@
 
             for (var currentByte = 0; currentByte < BytesPerLine; ++currentByte)
             {
-                var attribute = this.BUS.VRAM.Peek((ushort)attributeAddress++);
+                var attribute = this.BUS.VRAM.Peek(attributeAddress++);
                 var ink = attribute & (byte)Mask.Three;
                 var paper = (attribute >> 3) & (int)Mask.Three;
                 var bright = (attribute & (byte)Bits.Bit6) != 0;
@@ -400,7 +400,7 @@
                 var background = this.Palette.GetColor(flashing && this._flashing ? ink : paper, bright);
                 var foreground = this.Palette.GetColor(flashing && this._flashing ? paper : ink, bright);
 
-                var bitmap = this.BUS.VRAM.Peek((ushort)bitmapAddress++);
+                var bitmap = this.BUS.VRAM.Peek(bitmapAddress++);
                 var byteX = currentByte << 3;
 		        for (int bit = 0; bit< 8; ++bit)
                 {

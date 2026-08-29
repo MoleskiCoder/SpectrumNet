@@ -5,6 +5,12 @@
 
     internal abstract class AbstractUla<ColorT, KeyT> : EightBit.ClockedChip
     {
+        private readonly Bus _bus;
+        private readonly Z80.Z80 _cpu;
+        private readonly InputOutput _ports;
+        private readonly Ram _vram;
+        private readonly AbstractBuzzer _buzzer;
+
         private const int LeftRasterBorder = 32;
         private const int RightRasterBorder = 64;
         private const int TopRasterBorder = 56;
@@ -55,26 +61,30 @@
         protected readonly Dictionary<byte, KeyT[]> _keyboardMapping = [];
         private readonly HashSet<KeyT> _keyboardRaw = [];
 
-        protected AbstractUla(Board bus)
+        protected AbstractUla(EightBit.Bus bus, Z80.Z80 cpu, InputOutput ports, Ram vram, AbstractBuzzer buzzer)
         {
-            this.BUS = bus ?? throw new ArgumentNullException(nameof(bus));
+            this._bus = bus ?? throw new ArgumentNullException(nameof(bus));
+            this._cpu = cpu ?? throw new ArgumentNullException(nameof(cpu));
+            this._ports = ports ?? throw new ArgumentNullException(nameof(ports));
+            this._vram = vram ?? throw new ArgumentNullException(nameof(vram));
+            this._buzzer = buzzer ?? throw new ArgumentNullException(nameof(buzzer));
 
             this.RaisedPOWER += this.Ula_RaisedPOWER;
 
             this.Ticked += this.Ula_Ticked;
 
-            this.BUS.CPU.LoweringRD += this.CPU_LoweringRD;
-            this.BUS.CPU.LoweringWR += this.CPU_LoweringWR;
+            this._cpu.LoweringRD += this.CPU_LoweringRD;
+            this._cpu.LoweringWR += this.CPU_LoweringWR;
 
-            this.BUS.Ports.ReadingPort += this.Ports_ReadingPort;
-            this.BUS.Ports.WrittenPort += this.Ports_WrittenPort;
+            this._ports.ReadingPort += this.Ports_ReadingPort;
+            this._ports.WrittenPort += this.Ports_WrittenPort;
         }
 
         private void CPU_LoweringWR(object? sender, EventArgs e) => this.MaybeContend();
 
         private void CPU_LoweringRD(object? sender, EventArgs e) => this.MaybeContend();
 
-        private bool MaybeContend() => this.MaybeContend(this.BUS.Address.Joined);
+        private bool MaybeContend() => this.MaybeContend(this._bus.Address.Joined);
 
         private bool MaybeContend(ushort address)
         {
@@ -130,8 +140,6 @@
         private int FrameUlaCycles => TotalHorizontalClocks * this.V + this.C;
         private int FrameCpuCycles => this.FrameUlaCycles / 2;
 
-        private Board BUS { get; }
-
         private ref int F => ref this._frameCounter;
 
         private ref int V => ref this._verticalCounter;
@@ -155,10 +163,10 @@
         private void ProcessVerticalSync(int y)
         {
             if (y == (ActiveRasterHeight + BottomRasterBorder))
-                this.BUS.CPU.LowerINT();
+                this._cpu.LowerINT();
 
             this.Tick(InterruptDuration);
-            this.BUS.CPU.RaiseINT();
+            this._cpu.RaiseINT();
             this.Tick(ActiveRasterWidth - InterruptDuration);
 
             this.Tick(RightRasterBorder);
@@ -228,7 +236,7 @@
                 this.RenderLine();
             System.Diagnostics.Debug.Assert(this.V == TotalHeight);
             this.ResetV();
-            this.BUS.Sound.EndFrame();
+            this._buzzer.EndFrame();
         }
 
         private void IncrementF()
@@ -334,7 +342,7 @@
             var portHigh = port.High;
             var selected = this.FindSelectedKeys((byte)~portHigh);
             var value = selected | (this._ear.Raised() ? Bit(6) : 0);
-            this.BUS.Ports.WriteInputPort(port, (byte)value);
+            this._ports.WriteInputPort(port, (byte)value);
         }
 
         private void MaybeWrittenPort(Register16 port)
@@ -359,14 +367,14 @@
 
         private void WrittenPort(Register16 port)
         {
-            var value = this.BUS.Ports.ReadOutputPort(port);
+            var value = this._ports.ReadOutputPort(port);
 
             this._mic.Match(value & (byte)Bits.Bit3);
             this._speaker.Match(value & (byte)Bits.Bit4);
 
             this.SetBorder(value & (byte)Mask.Three);
 
-            this.BUS.Sound.Buzz(this._speaker, this.FrameCpuCycles);
+            this._buzzer.Buzz(this._speaker, this.FrameCpuCycles);
         }
 
         private void Flash() => this._flashing = !this._flashing;
@@ -392,7 +400,7 @@
 
             for (var currentByte = 0; currentByte < BytesPerLine; ++currentByte)
             {
-                var attribute = this.BUS.VRAM.Peek(attributeAddress++);
+                var attribute = this._vram.Peek(attributeAddress++);
                 var ink = attribute & (byte)Mask.Three;
                 var paper = (attribute >> 3) & (int)Mask.Three;
                 var bright = (attribute & (byte)Bits.Bit6) != 0;
@@ -400,7 +408,7 @@
                 var background = this.Palette.GetColor(flashing && this._flashing ? ink : paper, bright);
                 var foreground = this.Palette.GetColor(flashing && this._flashing ? paper : ink, bright);
 
-                var bitmap = this.BUS.VRAM.Peek(bitmapAddress++);
+                var bitmap = this._vram.Peek(bitmapAddress++);
                 var byteX = currentByte << 3;
 		        for (int bit = 0; bit< 8; ++bit)
                 {

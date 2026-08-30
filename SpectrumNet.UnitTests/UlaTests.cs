@@ -40,9 +40,9 @@
         [TestMethod]
         public void TestSingleFrame()
         {
-            this.CPU.LoweringINT += CPU_LoweringINT;
-            this.CPU.RaisingINT += CPU_RaisingINT;
-            this.ULA.Ticked += ULA_Ticked;
+            this.CPU.LoweringINT += this.CPU_LoweringINT;
+            this.CPU.RaisingINT += this.CPU_RaisingINT;
+            this.ULA.Ticked += this.ULA_Ticked;
 
             this._frameFinished = false;
             this._interruptFinished = true;
@@ -57,19 +57,32 @@
             Assert.AreEqual(1, this._interruptCount);
             Assert.AreEqual(startingF + 1, this.ULA.F);
 
-            this.ULA.Ticked -= ULA_Ticked;
-            this.CPU.RaisingINT -= CPU_RaisingINT;
-            this.CPU.LoweringINT -= CPU_LoweringINT;
+            this.ULA.Ticked -= this.ULA_Ticked;
+            this.CPU.RaisingINT -= this.CPU_RaisingINT;
+            this.CPU.LoweringINT -= this.CPU_LoweringINT;
         }
 
         [TestMethod]
         public void TestActiveScanLine()
         {
-            this.ULA.Ticked += ULA_Ticked;
+            this.ULA.Ticked += this.ULA_Ticked;
             this._frameTicks = 0;
             this.ULA.RenderLine();
             Assert.AreEqual(224 * 2, this._frameTicks);
-            this.ULA.Ticked -= ULA_Ticked;
+            this.ULA.Ticked -= this.ULA_Ticked;
+        }
+
+        [TestMethod]
+        public void TestInterruptToInterrupt()
+        {
+            this.CPU.LoweringINT += this.CPU_LoweringINT;
+
+            this.ULA.RenderLines();
+            this.ULA.RenderLines();
+
+            Assert.AreEqual(2, this._interruptCount);
+
+            this.CPU.RaisingINT -= this.CPU_RaisingINT;
         }
 
         private void ULA_Ticked(object? sender, EventArgs e)

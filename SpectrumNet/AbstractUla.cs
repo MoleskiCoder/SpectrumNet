@@ -49,7 +49,7 @@
         protected ColorT _borderColour;
 
         private int _contention;
-        bool _accessingVRAM;
+        private int _interruptCycles;
 
         // Output port information
         private EightBit.PinLevel _mic = EightBit.PinLevel.Low; // Bit 3
@@ -80,37 +80,20 @@
             this._ports.WrittenPort += this.Ports_WrittenPort;
         }
 
-        private void CPU_LoweringWR(object? sender, EventArgs e) => this.MaybeContend();
+        private void CPU_LoweringWR(object? sender, EventArgs e) => this.CalculateContention();
 
-        private void CPU_LoweringRD(object? sender, EventArgs e) => this.MaybeContend();
+        private void CPU_LoweringRD(object? sender, EventArgs e) => this.CalculateContention();
 
-        private bool MaybeContend() => this.MaybeContend(this._bus.Address.Joined);
 
-        private bool MaybeContend(ushort address)
-        {
-	        bool hit = this._accessingVRAM && Contended(address);
-	        if (hit)
-                this.AddContention(3);
-	        return hit;
-        }
+        private bool ContendedAddress() => Contended(this._bus.Address.Joined);
 
         private static bool Contended(ushort address)
         {
-	        // Contended area is between 0x4000 (0100000000000000)
-	        //						and  0x7fff (0111111111111111)
-	        var mask = Bits.Bit15 | Bits.Bit14;
+            // Contended area is between 0x4000 (0100000000000000)
+            //						and  0x7fff (0111111111111111)
+            var mask = Bits.Bit15 | Bits.Bit14;
             var masked = address & (ushort)mask;
-	        return masked == 0b0100000000000000;
-        }
-
-        private void AddContention(int cycles) => this._contention += 2 * cycles;
-
-        private bool MaybeApplyContention()
-        {
-	        var apply = this.Contention > 0;
-	        if (apply)
-		        --this._contention;
-	        return apply;
+            return masked == 0b0100000000000000;
         }
 
         private void InitialiseVRAMAddresses()
@@ -134,8 +117,6 @@
         public void SetBorder(int value) => this._borderColour = this.Palette.GetColor(value);
 
         public ColorT[] Pixels { get; } = new ColorT[RasterWidth * RasterHeight];
-
-        private int Contention => this._contention;
 
         internal int FrameUlaCycles => TotalHorizontalClocks * this.V + this.C;
         internal int FrameCpuCycles => this.FrameUlaCycles / 2;
@@ -165,7 +146,10 @@
         private void ProcessVerticalSync(int y)
         {
             if (y == (ActiveRasterHeight + BottomRasterBorder))
+            {
                 this._cpu.LowerINT();
+                this._interruptCycles = 0;
+            }
 
             this.Tick(InterruptDuration);
             this._cpu.RaiseINT();
@@ -283,12 +267,37 @@
             this._flashing = false;
         }
 
+        private void CalculateContention()
+        {
+            this._contention = 0;
+            const int contendedBase = 14335;
+            const int contendedCycles = ActiveRasterWidth / 2;
+            const int uncontendedCycles = (HorizontalRetraceClocks + LeftRasterBorder + RightRasterBorder) / 2;
+            var possiblyContended = this._interruptCycles > contendedBase && this.ContendedAddress();
+            if (possiblyContended)
+            {
+                const int totalNumberOfCyclesPerLine = contendedCycles + uncontendedCycles;
+                var currentCycle = this._interruptCycles - contendedBase;
+                var scanLine = currentCycle / totalNumberOfCyclesPerLine;
+                var scanColumn = currentCycle % totalNumberOfCyclesPerLine;
+                var contended = scanLine < ActiveRasterHeight && scanColumn < contendedCycles;
+                if (contended)
+                {
+                    int[] waitPattern = [6, 5, 4, 3, 2, 1, 0, 0];
+                    var wait = waitPattern[scanColumn % 8];
+                    this._contention = wait;
+                }
+            }
+        }
+
         private void Ula_Ticked(object? sender, EventArgs e)
         {
             ++this.C;
             if ((this.Cycles % 2) == 0)
             {
-                if (!this.MaybeApplyContention())
+                ++this._interruptCycles;
+                var applyContention = this._contention-- > 0;
+                if (!applyContention)
                     this.Proceed?.Invoke(this, EventArgs.Empty);
             }
         }
@@ -386,8 +395,6 @@
             System.Diagnostics.Debug.Assert(y >= 0);
             System.Diagnostics.Debug.Assert(y < RasterHeight);
 
-            this._accessingVRAM = true;
-
 	        // Position in VRAM
 	        var indexY = y - TopRasterBorder;
             System.Diagnostics.Debug.Assert(indexY < ActiveRasterHeight);
@@ -412,7 +419,7 @@
 
                 var bitmap = this._vram.Peek(bitmapAddress++);
                 var byteX = currentByte << 3;
-		        for (int bit = 0; bit< 8; ++bit)
+                for (int bit = 0; bit < 8; ++bit)
                 {
                     var pixel = (bitmap & Bit(bit)) != 0;
                     var x = (~bit & (int)Mask.Three) | byteX;
@@ -420,7 +427,6 @@
                     this.SetClockedPixel(pixelBase + x, pixel ? foreground : background);
                 }
             }
-            this._accessingVRAM = false;
         }
 
         private void SetClockedPixel(int offset, ColorT colour)

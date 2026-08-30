@@ -90,6 +90,5 @@
             var taken = this.CPU.Run(++this._allowed);
             this._allowed -= taken;
         }
-
     }
 }

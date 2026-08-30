@@ -19,7 +19,7 @@
 
         protected float SampleLength => (float)this._audioFrequency / (float)this._clockRate;
 
-        protected ulong SamplesPerFrame => (ulong)((float)this._audioFrequency / this._frameRate + 1.0f);
+        protected ulong SamplesPerFrame => (ulong)((float)this._audioFrequency / this._frameRate);
 
         protected AbstractBuzzer(int audioFrequency)
         : this(audioFrequency, Ula.FramesPerSecond, Ula.CpuClockRate)

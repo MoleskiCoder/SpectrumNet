@@ -4,11 +4,14 @@
 
     internal sealed class Ula : AbstractUla<uint, SDL.Keycode>
     {
-        protected override AbstractColorPalette<uint> Palette => new ColorPalette();
+        private readonly AbstractColorPalette<uint> _palette;
+
+        protected override AbstractColorPalette<uint> Palette => this._palette;
 
         public Ula(Board bus)
         : base(bus, bus.Timings, bus.CPU, bus.Ports, bus.VRAM, bus.Sound)
         {
+            this._palette = new ColorPalette();
             this._borderColour = this.Palette.GetColor(ColorPalette.Index.Black);
         }
 

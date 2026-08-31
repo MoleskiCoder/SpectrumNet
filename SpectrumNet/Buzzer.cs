@@ -5,7 +5,7 @@
     using System;
     using System.Runtime.InteropServices;
 
-    internal sealed class Buzzer(SDL.AudioFormat format = SDL.AudioFormat.AudioF32LE) : AbstractBuzzer(AudioFrequency)
+    internal sealed class Buzzer(ITimings timings, SDL.AudioFormat format = SDL.AudioFormat.AudioF32LE) : AbstractBuzzer(AudioFrequency, timings)
     {
         private const int AudioFrequency = 44100;
 
@@ -16,7 +16,6 @@
         public override void Initialise()
         {
             SDL.LogInfo(SDL.LogCategory.Audio, $"Audio frequency: {this._audioFrequency}");
-            SDL.LogInfo(SDL.LogCategory.Audio, $"CPU Clock rate: {this._clockRate}");
             SDL.LogInfo(SDL.LogCategory.Audio, $"Sample length: {this.SampleLength}");
 
             SDL.AudioSpec want;

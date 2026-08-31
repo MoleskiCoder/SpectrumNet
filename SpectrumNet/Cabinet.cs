@@ -1,10 +1,11 @@
 ﻿namespace SpectrumNet
 {
     using SDL3;
+    using System.Diagnostics;
 
-    internal sealed class Cabinet(Configuration configuration) : Gaming.Game(configuration.LoggingLevel)
+    internal sealed class Cabinet(Configuration configuration, ITimings timings) : Gaming.Game(configuration.LoggingLevel)
     {
-        public Board Motherboard { get; } = new Board(configuration);
+        public Board Motherboard { get; } = new Board(configuration, timings);
 
         public Configuration Settings { get; } = configuration;
 
@@ -20,19 +21,25 @@
 
         protected override SDL.PixelFormat PixelFormat => ColorPalette.PixelFormat;
 
-        public override float FramesPerSecond => Ula.FramesPerSecond;
+        public override float FramesPerSecond => this.Motherboard.ULA.FramesPerSecond;
 
         public override bool UseVSYNC => true;
 
         public override int DisplayScale => 2;
 
-        public override int RasterWidth => Ula.RasterWidth;
+        public override int RasterWidth => this.Motherboard.ULA.RasterWidth;
 
-        public override int RasterHeight => Ula.RasterHeight;
+        public override int RasterHeight => this.Motherboard.ULA.RasterHeight;
 
         public override string Title => "Spectrum";
 
-        protected override uint[] Pixels() => this.Motherboard.ULA.Pixels;
+        protected override uint[] Pixels()
+        {
+            Debug.Assert(this.Motherboard is not null);
+            Debug.Assert(this.Motherboard.ULA is not null);
+            Debug.Assert(this.Motherboard.ULA.Pixels is not null);
+            return this.Motherboard.ULA.Pixels;
+        }
 
         public override void RaisePOWER()
         {

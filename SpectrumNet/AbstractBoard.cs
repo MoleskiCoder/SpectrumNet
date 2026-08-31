@@ -13,8 +13,10 @@
 
         private int _allowed;
 
-        public AbstractBoard(bool disassembling)
+        protected AbstractBoard(ITimings timings, bool disassembling)
         {
+            this.Timings = timings;
+
             this.CPU = new Z80.Z80(this, this.Ports);
             this._disassembler = new Z80.Disassembler(this);
             this._disassembling = disassembling;
@@ -23,6 +25,8 @@
             this._vramMapping = new(this.VRAM, 0x4000, 0xffff, EightBit.AccessLevel.ReadWrite);
             this._wramMapping = new(this.WRAM, 0x8000, 0xffff, EightBit.AccessLevel.ReadWrite);
         }
+
+        public ITimings Timings { get; }
 
         public Z80.Z80 CPU { get; }
 

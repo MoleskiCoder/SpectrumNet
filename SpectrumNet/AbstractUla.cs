@@ -2,19 +2,21 @@
 {
     using EightBit;
     using System;
+    using System.Diagnostics;
 
     internal abstract class AbstractUla<ColorT, KeyT> : EightBit.ClockedChip
     {
         private readonly Bus _bus;
+        private readonly ITimings _timings;
         private readonly Z80.Z80 _cpu;
         private readonly InputOutput _ports;
         private readonly Ram _vram;
         private readonly AbstractBuzzer _buzzer;
 
-        private const int LeftRasterBorder = 32;
-        private const int RightRasterBorder = 64;
-        private const int TopRasterBorder = 56;
-        private const int BottomRasterBorder = 56;
+        public int LeftRasterBorder => this._timings.LeftRasterBorder;
+        public int RightRasterBorder => this._timings.RightRasterBorder;
+        public int TopRasterBorder => this._timings.TopRasterBorder;
+        public int BottomRasterBorder => this._timings.BottomRasterBorder;
 
         private const int ActiveRasterWidth = 256;
         private const int ActiveRasterHeight = 192;
@@ -27,26 +29,28 @@
         private const int BytesPerLine = ActiveRasterWidth / 8;
         private const ushort AttributeAddress = 0x1800;
 
-        public const float FramesPerSecond = 50.08f;
-        public const int UlaClockRate = 7000000; // 7Mhz
-        public const int CpuClockRate = UlaClockRate / 2; // 3.5Mhz
+        public float FramesPerSecond => this._timings.FramesPerSecond;
+        public float UlaClockRate => this._timings.UlaClockRate;
+        public float CpuClockRate => this._timings.CpuClockRate;
 
-        public const int RasterWidth = LeftRasterBorder + ActiveRasterWidth + RightRasterBorder;
-        public const int RasterHeight = TopRasterBorder + ActiveRasterHeight + BottomRasterBorder;
+        public int RasterWidth => this.LeftRasterBorder + ActiveRasterWidth + this.RightRasterBorder;
+        public int RasterHeight => this.TopRasterBorder + ActiveRasterHeight + this.BottomRasterBorder;
 
-        public const int TotalHeight = VerticalRetraceLines + RasterHeight;
-        public const int TotalHorizontalClocks = HorizontalRetraceClocks + RasterWidth;
+        public int TotalHeight => VerticalRetraceLines + this.RasterHeight;
+        public int TotalHorizontalClocks => HorizontalRetraceClocks + this.RasterWidth;
 
         private readonly ushort[] _scanLineAddresses = new ushort[256];
         private readonly ushort[] _attributeAddresses = new ushort[256];
 
         protected abstract AbstractColorPalette<ColorT> Palette { get; }
 
+        private ColorT[]? _pixels;
+
         private bool _flashing;
         private int _frameCounter;   // 4 bits
         private int _verticalCounter; // 9 bits
         private int _horizontalCounter; // 9 bits
-        protected ColorT _borderColour;
+        protected ColorT? _borderColour;
 
         private int _contention;
         private int _interruptCycles;
@@ -61,9 +65,10 @@
         protected readonly Dictionary<byte, KeyT[]> _keyboardMapping = [];
         private readonly HashSet<KeyT> _keyboardRaw = [];
 
-        protected AbstractUla(EightBit.Bus bus, Z80.Z80 cpu, InputOutput ports, Ram vram, AbstractBuzzer buzzer)
+        protected AbstractUla(EightBit.Bus bus, ITimings timings, Z80.Z80 cpu, InputOutput ports, Ram vram, AbstractBuzzer buzzer)
         {
             this._bus = bus ?? throw new ArgumentNullException(nameof(bus));
+            this._timings = timings ?? throw new ArgumentNullException(nameof(timings));
             this._cpu = cpu ?? throw new ArgumentNullException(nameof(cpu));
             this._ports = ports ?? throw new ArgumentNullException(nameof(ports));
             this._vram = vram ?? throw new ArgumentNullException(nameof(vram));
@@ -85,7 +90,7 @@
         private void CPU_LoweringRD(object? sender, EventArgs e) => this.CalculateContention();
 
 
-        private bool ContendedAddress() => Contended(this._bus.Address.Joined);
+        private bool ContendedAddress => Contended(this._bus.Address.Joined);
 
         private static bool Contended(ushort address)
         {
@@ -116,7 +121,7 @@
 
         public void SetBorder(int value) => this._borderColour = this.Palette.GetColor(value);
 
-        public ColorT[] Pixels { get; } = new ColorT[RasterWidth * RasterHeight];
+        public ColorT[]? Pixels => this._pixels;
 
         internal int FrameUlaCycles => TotalHorizontalClocks * this.V + this.C;
         internal int FrameCpuCycles => this.FrameUlaCycles / 2;
@@ -129,7 +134,7 @@
 
         internal ref int C => ref this._horizontalCounter;
 
-        private void ProcessActiveLine() => this.ProcessActiveLine(this.V + TopRasterBorder);
+        private void ProcessActiveLine() => this.ProcessActiveLine(this.V + this.TopRasterBorder);
 
         private void ProcessActiveLine(int y)
         {
@@ -139,13 +144,13 @@
             this.RenderLeftRasterBorder(y);
         }
 
-        private void ProcessBottomBorder() => this.ProcessBorder(this.V + TopRasterBorder);
+        private void ProcessBottomBorder() => this.ProcessBorder(this.V + this.TopRasterBorder);
 
         private void ProcessVerticalSync() => this.ProcessVerticalSync(this.V);
 
         private void ProcessVerticalSync(int y)
         {
-            if (y == (ActiveRasterHeight + BottomRasterBorder))
+            if (y == (ActiveRasterHeight + this.BottomRasterBorder))
             {
                 this._cpu.LowerINT();
                 this._interruptCycles = 0;
@@ -155,9 +160,9 @@
             this._cpu.RaiseINT();
             this.Tick(ActiveRasterWidth - InterruptDuration);
 
-            this.Tick(RightRasterBorder);
+            this.Tick(this.RightRasterBorder);
             this.Tick(HorizontalRetraceClocks);
-            this.Tick(LeftRasterBorder);
+            this.Tick(this.LeftRasterBorder);
         }
 
         private void ProcessTopBorder()
@@ -188,6 +193,7 @@
             for (int chunk = 0; chunk < chunks; ++chunk)
             {
                 var colour = this._borderColour;
+                Debug.Assert(colour is not null);
                 for (int pixel = 0; pixel < 8; ++pixel)
                 {
                     this.SetClockedPixel(offset++, colour);
@@ -257,6 +263,8 @@
 
         private void Ula_RaisedPOWER(object? sender, EventArgs e)
         {
+            this._pixels = new ColorT[this.RasterWidth * this.RasterHeight];
+
             this.InitialiseKeyboardMapping();
             this.InitialiseVRAMAddresses();
 
@@ -271,12 +279,12 @@
         {
             this._contention = 0;
             const int contendedBase = 14335;
-            const int contendedCycles = ActiveRasterWidth / 2;
-            const int uncontendedCycles = (HorizontalRetraceClocks + LeftRasterBorder + RightRasterBorder) / 2;
-            var possiblyContended = this._interruptCycles > contendedBase && this.ContendedAddress();
+            var possiblyContended = (this._interruptCycles > contendedBase) && this.ContendedAddress;
             if (possiblyContended)
             {
-                const int totalNumberOfCyclesPerLine = contendedCycles + uncontendedCycles;
+                const int contendedCycles = ActiveRasterWidth / 2;
+                var uncontendedCycles = (HorizontalRetraceClocks + this.LeftRasterBorder + this.RightRasterBorder) / 2;
+                var totalNumberOfCyclesPerLine = contendedCycles + uncontendedCycles;
                 var currentCycle = this._interruptCycles - contendedBase;
                 var scanLine = currentCycle / totalNumberOfCyclesPerLine;
                 var scanColumn = currentCycle % totalNumberOfCyclesPerLine;
@@ -435,7 +443,11 @@
             this.Tick();
         }
 
-        private void SetPixel(int offset, ColorT colour) => this.Pixels[offset] = colour;
+        private void SetPixel(int offset, ColorT colour)
+        {
+            Debug.Assert(this.Pixels is not null);
+            this.Pixels[offset] = colour;
+        }
 
         private void Ports_ReadingPort(object? sender, PortEventArgs e) => this.MaybeReadingPort(e.Port);
 

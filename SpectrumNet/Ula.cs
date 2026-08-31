@@ -7,7 +7,7 @@
         protected override AbstractColorPalette<uint> Palette => new ColorPalette();
 
         public Ula(Board bus)
-        : base(bus, bus.CPU, bus.Ports, bus.VRAM, bus.Sound)
+        : base(bus, bus.Timings, bus.CPU, bus.Ports, bus.VRAM, bus.Sound)
         {
             this._borderColour = this.Palette.GetColor(ColorPalette.Index.Black);
         }

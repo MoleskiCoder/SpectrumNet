@@ -13,16 +13,17 @@
 
         private TapeFile? _tape;
 
-        public Board(Configuration configuration)
-        : base(configuration.DebugMode)
+        public Board(Configuration configuration, ITimings timings)
+        : base(timings, configuration.DebugMode)
         {
             this._configuration = configuration;
+            this.Sound = new Buzzer(this.Timings);
             this.ULA = new Ula(this);
         }
 
         public AbstractUla<uint, SDL.Keycode> ULA { get; }
 
-        public AbstractBuzzer Sound { get; } = new Buzzer();
+        public AbstractBuzzer Sound { get; }
 
         public int NumberOfExpansions => this._expansions.Count;
 

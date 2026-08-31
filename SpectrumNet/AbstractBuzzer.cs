@@ -4,9 +4,8 @@
 
     internal abstract class AbstractBuzzer : Device
     {
+        private readonly ITimings _timings;
         protected readonly int _audioFrequency;
-        protected readonly float _frameRate;
-        protected readonly int _clockRate;
 
         protected float LowLevel = -0.5f;
         protected float HighLevel = +0.5f;
@@ -17,22 +16,15 @@
 
         protected float _lastLevel;
 
-        protected float SampleLength => (float)this._audioFrequency / (float)this._clockRate;
+        protected float SampleLength => (float)this._audioFrequency / this._timings.CpuClockRate;
 
-        protected ulong SamplesPerFrame => (ulong)((float)this._audioFrequency / this._frameRate);
+        protected ulong SamplesPerFrame => (ulong)((float)this._audioFrequency / this._timings.FramesPerSecond);
 
-        protected AbstractBuzzer(int audioFrequency)
-        : this(audioFrequency, Ula.FramesPerSecond, Ula.CpuClockRate)
-        { }
-
-        protected AbstractBuzzer(int audioFrequency, float frameRate, int clockRate)
+        protected AbstractBuzzer(int audioFrequency, ITimings timings)
         {
-            this._lastLevel = this.LowLevel;
-
+            this._timings = timings;
             this._audioFrequency = audioFrequency;
-            this._frameRate = frameRate;
-            this._clockRate = clockRate;
-
+            this._lastLevel = this.LowLevel;
             this._buffer = new float[this.SamplesPerFrame];
         }
 

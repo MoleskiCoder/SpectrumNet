@@ -16,7 +16,8 @@
 
         public UlaTests()
         {
-            this._board = new SealedBoard();
+            var timings = new PalTimings();
+            this._board = new SealedBoard(timings);
         }
 
         [TestInitialize]
@@ -53,7 +54,7 @@
             this.ULA.RenderLines();
 
             Assert.AreEqual(AbstractUla<uint, byte>.InterruptDuration, this._interruptTicks);
-            Assert.AreEqual(69888 * 2, this._frameTicks);
+            Assert.AreEqual(this.ULA.TotalHorizontalClocks * this.ULA.TotalHeight, this._frameTicks);
             Assert.AreEqual(1, this._interruptCount);
             Assert.AreEqual(startingF + 1, this.ULA.F);
 
@@ -68,7 +69,7 @@
             this.ULA.Ticked += this.ULA_Ticked;
             this._frameTicks = 0;
             this.ULA.RenderLine();
-            Assert.AreEqual(224 * 2, this._frameTicks);
+            Assert.AreEqual(this.ULA.TotalHorizontalClocks, this._frameTicks);
             this.ULA.Ticked -= this.ULA_Ticked;
         }
 
@@ -94,7 +95,7 @@
 
         private void CPU_LoweringINT(object? sender, EventArgs e)
         {
-            Assert.AreEqual(248, this.ULA.V);
+            Assert.AreEqual(Ula.ActiveRasterHeight + this.ULA.BottomRasterBorder, this.ULA.V);
             Assert.AreEqual(0, this.ULA.C);
             this._interruptFinished = false;
             ++this._interruptCount;

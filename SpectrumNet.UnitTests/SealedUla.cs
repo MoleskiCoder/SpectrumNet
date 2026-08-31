@@ -5,7 +5,7 @@
         private readonly AbstractColorPalette<uint> _palette = new SealedColorPalette();
 
         internal SealedUla(SealedBoard board)
-        : base(board, board.CPU, board.Ports, board.VRAM, board.Sound)
+        : base(board, board.Timings, board.CPU, board.Ports, board.VRAM, board.Sound)
         {
         }
 

@@ -1,13 +1,9 @@
 ﻿namespace SpectrumNet.UnitTests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
-
     internal class SealedBuzzer : AbstractBuzzer
     {
-        public SealedBuzzer(int audioFrequency)
-        : base(audioFrequency)
+        public SealedBuzzer(ITimings timings, int audioFrequency)
+        : base(audioFrequency, timings)
         {
         }
         protected override void PlayBuffer()

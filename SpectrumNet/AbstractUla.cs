@@ -19,7 +19,7 @@
         public int BottomRasterBorder => this._timings.BottomRasterBorder;
 
         private const int ActiveRasterWidth = 256;
-        private const int ActiveRasterHeight = 192;
+        public const int ActiveRasterHeight = 192;
 
         private const int HorizontalRetraceClocks = 96;
         private const int VerticalRetraceLines = 8;
@@ -167,11 +167,12 @@
 
         private void ProcessTopBorder()
         {
-            this.ProcessBorder(this.V - VerticalRetraceLines - TopRasterBorder - ActiveRasterHeight);
+            this.ProcessBorder(this.V - VerticalRetraceLines - BottomRasterBorder - ActiveRasterHeight);
         }
 
         private void ProcessBorder(int y)
         {
+            Debug.Assert(y >= 0);
             this.RenderRasterBorder(LeftRasterBorder, y, ActiveRasterWidth);
             this.RenderRightRasterBorder(y);
             this.Tick(HorizontalRetraceClocks);
@@ -184,12 +185,15 @@
 
         private void RenderRasterBorder(int x, int y, int width)
         {
+            Debug.Assert(x >= 0);
+            Debug.Assert(y >= 0);
+            Debug.Assert(width > 0);
             // The ZX Spectrum ULA, Chris Smith
             // Chapter 12 (Generating the Display), Border Generation
             System.Diagnostics.Debug.Assert(x % 8 == 0);
             System.Diagnostics.Debug.Assert(width % 8 == 0);
             var chunks = width / 8;
-            var offset = y * RasterWidth + x;
+            var offset = y * this.RasterWidth + x;
             for (int chunk = 0; chunk < chunks; ++chunk)
             {
                 var colour = this._borderColour;

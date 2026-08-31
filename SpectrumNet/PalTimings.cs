@@ -9,6 +9,6 @@
         public int BottomRasterBorder { get; } = 56;
 
         public float FramesPerSecond { get; } = 50.08f;
-        public float UlaClockRate { get; } = 7_000_000.0f;
+        public float MasterClockRate { get; } = 14_000_000.0f;
     }
 }

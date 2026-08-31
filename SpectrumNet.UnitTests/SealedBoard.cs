@@ -1,20 +1,20 @@
 ﻿namespace SpectrumNet.UnitTests
 {
-    using SDL3;
-
     internal sealed class SealedBoard : AbstractBoard
     {
         private readonly SealedUla _ula;
+        private readonly SealedBuzzer _sound;
 
-        public SealedBoard()
-        : base(false)
+        public SealedBoard(ITimings timings)
+        : base(timings, false)
         {
+            this._sound = new SealedBuzzer(timings, 44100);
             this._ula = new SealedUla(this);
         }
 
         public AbstractUla<uint, byte> ULA => this._ula;
 
-        public AbstractBuzzer Sound { get; } = new SealedBuzzer(44100);
+        public AbstractBuzzer Sound => this._sound;
 
         public override void Initialize()
         {
@@ -25,14 +25,14 @@
         public override void RaisePOWER()
         {
             base.RaisePOWER();
-            this.Sound.RaisePOWER();
+            this._sound.RaisePOWER();
             this._ula.RaisePOWER();
         }
 
         public override void LowerPOWER()
         {
             this._ula.LowerPOWER();
-            this.Sound.LowerPOWER();
+            this._sound.LowerPOWER();
             base.LowerPOWER();
         }
 

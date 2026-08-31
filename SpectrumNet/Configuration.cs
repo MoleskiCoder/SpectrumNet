@@ -4,6 +4,9 @@
 
     internal sealed class Configuration
     {
+        public ITimings Timings { get; } = new PalTimings();
+        //public ITimings Timings { get; } = new NtscTimings();
+
         public bool DebugMode { get; set; }
 
         //public SDL.LogPriority LoggingLevel { get; set; } = SDL.LogPriority.Debug;

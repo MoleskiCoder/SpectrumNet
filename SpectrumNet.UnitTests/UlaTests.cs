@@ -95,7 +95,7 @@
 
         private void CPU_LoweringINT(object? sender, EventArgs e)
         {
-            Assert.AreEqual(Ula.ActiveRasterHeight + this.ULA.BottomRasterBorder, this.ULA.V);
+            Assert.AreEqual(0, this.ULA.V);
             Assert.AreEqual(0, this.ULA.C);
             this._interruptFinished = false;
             ++this._interruptCount;

@@ -21,8 +21,8 @@
         private const int ActiveRasterWidth = 256;
         public const int ActiveRasterHeight = 192;
 
-        private const int HorizontalRetraceClocks = 96;
-        private const int VerticalRetraceLines = 8;
+        public const int HorizontalRetraceClocks = 96;
+        public const int VerticalRetraceLines = 8;
 
         internal const int InterruptDuration = 64;   // 32 CPU cycles
 
@@ -134,23 +134,17 @@
 
         internal ref int C => ref this._horizontalCounter;
 
-        private void ProcessActiveLine() => this.ProcessActiveLine(this.V + this.TopRasterBorder);
-
         private void ProcessActiveLine(int y)
         {
+            this.RenderLeftRasterBorder(y);
             this.RenderVRAM(y);
             this.RenderRightRasterBorder(y);
             this.Tick(HorizontalRetraceClocks);
-            this.RenderLeftRasterBorder(y);
         }
 
-        private void ProcessBottomBorder() => this.ProcessBorder(this.V + this.TopRasterBorder);
-
-        private void ProcessVerticalSync() => this.ProcessVerticalSync(this.V);
-
-        private void ProcessVerticalSync(int y)
+        private void ProcessVerticalSync()
         {
-            if (y == (ActiveRasterHeight + this.BottomRasterBorder))
+            if (this.V == 0)
             {
                 this._cpu.LowerINT();
                 this._interruptCycles = 0;
@@ -158,16 +152,7 @@
 
             this.Tick(InterruptDuration);
             this._cpu.RaiseINT();
-            this.Tick(ActiveRasterWidth - InterruptDuration);
-
-            this.Tick(this.RightRasterBorder);
-            this.Tick(HorizontalRetraceClocks);
-            this.Tick(this.LeftRasterBorder);
-        }
-
-        private void ProcessTopBorder()
-        {
-            this.ProcessBorder(this.V - VerticalRetraceLines - BottomRasterBorder - ActiveRasterHeight);
+            this.Tick(this.LeftRasterBorder - InterruptDuration + ActiveRasterWidth + this.RightRasterBorder + HorizontalRetraceClocks);
         }
 
         private void ProcessBorder(int y)
@@ -209,17 +194,14 @@
         {
             System.Diagnostics.Debug.Assert(this.C == 0);
 
-            if (this.V < ActiveRasterHeight)
-                this.ProcessActiveLine();
-
-            else if (this.V < (ActiveRasterHeight + BottomRasterBorder))
-                this.ProcessBottomBorder();
-
-            else if (this.V < (ActiveRasterHeight + BottomRasterBorder + VerticalRetraceLines))
+            if (this.V < VerticalRetraceLines)
                 this.ProcessVerticalSync();
-
-            else if (this.V < (RasterHeight + VerticalRetraceLines))
-                this.ProcessTopBorder();
+            else if (this.V < (VerticalRetraceLines + this.TopRasterBorder))
+                this.ProcessBorder(this.V - VerticalRetraceLines);
+            else if (this.V < (VerticalRetraceLines + this.TopRasterBorder + ActiveRasterHeight))
+                this.ProcessActiveLine(this.V - VerticalRetraceLines);
+            else if (this.V < (VerticalRetraceLines + this.TopRasterBorder + ActiveRasterHeight + this.BottomRasterBorder))
+                this.ProcessBorder(this.V - VerticalRetraceLines);
 
             System.Diagnostics.Debug.Assert(this.C == TotalHorizontalClocks);
             this.IncrementV();
@@ -228,7 +210,7 @@
         public void RenderLines()
         {
             System.Diagnostics.Debug.Assert(this.V == 0);
-            for (int i = 0; i < TotalHeight; ++i)
+            for (int i = 0; i < this.TotalHeight; ++i)
                 this.RenderLine();
             System.Diagnostics.Debug.Assert(this.V == TotalHeight);
             this.ResetV();
@@ -282,7 +264,9 @@
         private void CalculateContention()
         {
             this._contention = 0;
-            const int contendedBase = 14335;
+            var contendedBase = (VerticalRetraceLines + this.TopRasterBorder) * this.TotalHorizontalClocks / 2 - 1;
+            Debug.Assert(contendedBase == 14335);   // PAL
+            //Debug.Assert(contendedBase == 8959);    // NTSC
             var possiblyContended = (this._interruptCycles > contendedBase) && this.ContendedAddress;
             if (possiblyContended)
             {
@@ -405,16 +389,19 @@
         private void RenderVRAM(int y)
         {
             System.Diagnostics.Debug.Assert(y >= 0);
-            System.Diagnostics.Debug.Assert(y < RasterHeight);
+            System.Diagnostics.Debug.Assert(y < (TopRasterBorder + RasterHeight));
 
-	        // Position in VRAM
-	        var indexY = y - TopRasterBorder;
-            System.Diagnostics.Debug.Assert(indexY < ActiveRasterHeight);
+            // Position in VRAM
+            System.Diagnostics.Debug.Assert(y >= TopRasterBorder);
+            var indexY = y - TopRasterBorder;
+
+            Debug.Assert(indexY >= 0);
+            Debug.Assert(indexY < ActiveRasterHeight);
             var bitmapAddressY = this._scanLineAddresses[indexY];
             var attributeAddressY = this._attributeAddresses[indexY];
 
             // Position in pixel render 
-            var pixelBase = LeftRasterBorder + (y * RasterWidth);
+            var pixelBase = LeftRasterBorder + (y  * RasterWidth);
 
             var bitmapAddress = bitmapAddressY;
             var attributeAddress = attributeAddressY;

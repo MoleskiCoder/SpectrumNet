@@ -10,7 +10,7 @@ internal sealed partial class Game : SDL.IMainCallbacks<Game>
 
     public Game()
     {
-        this._computer = new(this._configuration);
+        this._computer = new(this._configuration, this._configuration.Timings);
     }
 
     private void LoadROM()
@@ -46,9 +46,9 @@ internal sealed partial class Game : SDL.IMainCallbacks<Game>
         //this._computer.LoadZ80(programDirectory + "\\HEDGEHOG.Z80"); // Not V1 (128k IF1)
         //this._computer.LoadZ80(programDirectory + "\\Knight Lore (1984)(Ultimate).z80");
         //this._computer.LoadZ80(programDirectory + "\\R-Type (1988)(Activision).z80");		// v3
-        //this._computer.LoadZ80(programDirectory + "\\Maziacs (1983)(DK'Tronics).z80"); // z80 v3
-        //this._computer.LoadZ80(programDirectory + "\\Mercenary - Escape From Targ (1987)(Novagen)[aka Mercenary I].z80");
-        //this._computer.LoadZ80(programDirectory + "\\Bubble Bobble (1987)(Firebird)(48K-128K).z80");
+        //this._computer.LoadZ80(programDirectory + "\\Maziacs (1983)(DK'Tronics).z80"); // z80 v3 
+        //this._computer.LoadZ80(programDirectory + "\\Mercenary - Escape From Targ (1987)(Novagen)[aka Mercenary I].z80"); //works
+        //this._computer.LoadZ80(programDirectory + "\\Bubble Bobble (1987)(Firebird)(48K-128K).z80");    // works
         //this._computer.LoadZ80(programDirectory + "\\Druid (1986)(Firebird).z80");
         //this._computer.LoadZ80(programDirectory + "\\Head Over Heels (1987)(Ocean Software).z80"); // works
         //this._computer.LoadZ80(programDirectory + "\\Alien 8 (1985)(Ultimate).z80");
@@ -57,7 +57,7 @@ internal sealed partial class Game : SDL.IMainCallbacks<Game>
         //this._computer.LoadZ80(programDirectory + "\\Rommels_Revenge_1983_Crystal_Computing.z80");    // works
         //this._computer.LoadZ80(programDirectory + "\\Elite (1986)(Firebird).z80");    // hangs
         //this._computer.LoadZ80(programDirectory + "\\Arkanoid (1987)(Imagine Software).z80"); // works
-        //this._computer.LoadZ80(programDirectory + "\\Ballblazer (1985)(Activision).z80"); // Not V1
+        //this._computer.LoadZ80(programDirectory + "\\Ballblazer (1985)(Activision).z80"); // works
         this._computer.LoadZ80(programDirectory + "\\Boulder Dash (1984)(First Star Software).z80");
         //this._computer.LoadZ80(programDirectory + "\\Spectrum Musicmaker (1983)(Robert Newman).z80");
         //this._computer.LoadZ80(programDirectory + "\\DK'Tronics Sound Effects (19xx)(DK'Tronics)[a].z80");

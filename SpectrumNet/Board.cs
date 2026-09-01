@@ -9,7 +9,6 @@
         private const ushort LdBytesAddress = 0x0556;
 
         private readonly Configuration _configuration;
-        private readonly List<Expansion> _expansions = [];
 
         private TapeFile? _tape;
 
@@ -25,25 +24,16 @@
 
         public AbstractBuzzer Sound { get; }
 
-        public int NumberOfExpansions => this._expansions.Count;
-
         public override void Initialize()
         {
             var romDirectory = this._configuration.RomDirectory;
             this.Plug(romDirectory + "\\48.rom");	// ZX Spectrum Basic
-
             this.ULA.Proceed += this.ULA_Proceed;
         }
 
         public override void RaisePOWER()
         {
             base.RaisePOWER();
-
-            foreach (var expansion in this._expansions)
-            {
-                expansion.RaisePOWER();
-            }
-
             this.Sound.RaisePOWER();
             this.ULA.RaisePOWER();
         }
@@ -52,18 +42,8 @@
         {
             this.ULA.LowerPOWER();
             this.Sound.LowerPOWER();
-
-            foreach (var expansion in this._expansions)
-            {
-                expansion.LowerPOWER();
-            }
-
             base.LowerPOWER();
         }
-
-        public void Plug(Expansion expansion) => this._expansions.Add(expansion);
-
-        public Expansion Expansion(int i) => this._expansions[i];
 
         public void LoadSna(string path)
         {

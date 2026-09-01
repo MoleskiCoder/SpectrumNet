@@ -11,7 +11,11 @@
         protected readonly EightBit.MemoryMapping _vramMapping;
         protected readonly EightBit.MemoryMapping _wramMapping;
 
+        protected readonly List<Expansion> _expansions = [];
+
         private int _allowed;
+
+        public int NumberOfExpansions => this._expansions.Count;
 
         protected AbstractBoard(ITimings timings, bool disassembling)
         {
@@ -54,15 +58,29 @@
             this.CPU.LowerRESET();
             this.CPU.RaiseINT();
             this.CPU.RaiseNMI();
+
+            foreach (var expansion in this._expansions)
+            {
+                expansion.RaisePOWER();
+            }
         }
 
         public override void LowerPOWER()
         {
+            foreach (var expansion in this._expansions)
+            {
+                expansion.LowerPOWER();
+            }
+
             this.CPU.LowerPOWER();
             base.LowerPOWER();
         }
 
         public void Plug(string path) => this.ROM.Load(path);
+
+        public void Plug(Expansion expansion) => this._expansions.Add(expansion);
+
+        public Expansion Expansion(int i) => this._expansions[i];
 
         public override EightBit.MemoryMapping Mapping(ushort absolute)
         {

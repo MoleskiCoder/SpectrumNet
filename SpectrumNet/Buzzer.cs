@@ -8,6 +8,7 @@
     internal sealed class Buzzer(ITimings timings, SDL.AudioFormat format = SDL.AudioFormat.AudioF32LE) : AbstractBuzzer(AudioFrequency, timings)
     {
         private const int AudioFrequency = 44100;
+        private const int ChannelCount = 1;
 
         private readonly SDL.AudioFormat _format = format;
 
@@ -21,7 +22,7 @@
             SDL.AudioSpec want;
             want.Freq = AudioFrequency;
             want.Format = this._format;
-            want.Channels = 1;
+            want.Channels = ChannelCount;
 
             this._stream.Handle = SDL.OpenAudioDeviceStream(SDL.AudioDeviceDefaultPlayback, want, null, IntPtr.Zero);
             Wrapper.MaybeThrowException(this._stream, "Unable to open audio stream");

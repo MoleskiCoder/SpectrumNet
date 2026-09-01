@@ -21,15 +21,15 @@
 
         protected override SDL.PixelFormat PixelFormat => ColorPalette.PixelFormat;
 
-        public override float FramesPerSecond => this.Motherboard.ULA.FramesPerSecond;
+        public override float FramesPerSecond => timings.FramesPerSecond;
 
         public override bool UseVSYNC => true;
 
         public override int DisplayScale => 2;
 
-        public override int RasterWidth => this.Motherboard.ULA.RasterWidth;
+        public override int RasterWidth => timings.RasterWidth;
 
-        public override int RasterHeight => this.Motherboard.ULA.RasterHeight;
+        public override int RasterHeight => timings.RasterHeight;
 
         public override string Title => "Spectrum";
 

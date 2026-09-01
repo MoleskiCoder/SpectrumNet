@@ -1,10 +1,9 @@
 ﻿namespace SpectrumNet.UnitTests
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
+    using EightBit;
 
     internal class SealedColorPalette : AbstractColorPalette<uint>
     {
+        protected override uint ExactColour(byte red, byte green, byte blue) => (uint)Mask.Sixteen;
     }
 }

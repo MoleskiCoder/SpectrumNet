@@ -8,7 +8,6 @@
         public int TopRasterBorder { get; } = 56;
         public int BottomRasterBorder { get; } = 56;
 
-        public float FramesPerSecond { get; } = 50.08f;
         public float MasterClockRate { get; } = 14_000_000.0f;
     }
 }

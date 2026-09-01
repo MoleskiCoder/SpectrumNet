@@ -259,12 +259,14 @@
                 var totalNumberOfCyclesPerLine = contendedCycles + uncontendedCycles;
                 var currentCycle = this._interruptCycles - contendedBase;
                 var scanLine = currentCycle / totalNumberOfCyclesPerLine;
-                var scanColumn = currentCycle % totalNumberOfCyclesPerLine;
-                var contended = scanLine < ITimings.ActiveRasterHeight && scanColumn < contendedCycles;
-                if (contended)
+                if (scanLine < ITimings.ActiveRasterHeight)
                 {
-                    int[] waitPattern = [6, 5, 4, 3, 2, 1, 0, 0];
-                    this._contention = waitPattern[scanColumn % PixelsPerCharacter];
+                    var scanColumn = currentCycle % totalNumberOfCyclesPerLine;
+                    if (scanColumn < contendedCycles)
+                    {
+                        int[] waitPattern = [6, 5, 4, 3, 2, 1, 0, 0];
+                        this._contention = waitPattern[scanColumn % PixelsPerCharacter];
+                    }
                 }
             }
         }

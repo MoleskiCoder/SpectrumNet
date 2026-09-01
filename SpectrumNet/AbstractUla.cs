@@ -27,7 +27,7 @@
         internal const int InterruptDuration = 64;   // 32 CPU cycles
 
         private const int BytesPerLine = ActiveRasterWidth / 8;
-        private const ushort AttributeAddress = 0x1800;
+        private const ushort AttributeAddress = 0x1800;     // Offset in VRAM for attributes (VRAM starts at 0x4000, so attributes are at 0x5800)
 
         public float FramesPerSecond => this._timings.FramesPerSecond;
         public float UlaClockRate => this._timings.UlaClockRate;
@@ -38,9 +38,6 @@
 
         public int TotalHeight => VerticalRetraceLines + this.RasterHeight;
         public int TotalHorizontalClocks => HorizontalRetraceClocks + this.RasterWidth;
-
-        private readonly ushort[] _scanLineAddresses = new ushort[256];
-        private readonly ushort[] _attributeAddresses = new ushort[256];
 
         protected abstract AbstractColorPalette<ColorT> Palette { get; }
 
@@ -101,22 +98,6 @@
             return masked == 0b0100000000000000;
         }
 
-        private void InitialiseVRAMAddresses()
-        {
-            var line = 0;
-            for (var p = 0; p < 4; ++p)
-            {
-                for (var y = 0; y < 8; ++y)
-                {
-                    for (var o = 0; o < 8; ++o, ++line)
-                    {
-                        this._scanLineAddresses[line] = (ushort)((p << 11) + (y << 5) + (o << 8));
-                        this._attributeAddresses[line] = (ushort)(AttributeAddress + (((p << 3) + y) << 5));
-                    }
-                }
-            }
-        }
-
         public event EventHandler<EventArgs>? Proceed;
 
         public void SetBorder(int value) => this._borderColour = this.Palette.GetColor(value);
@@ -175,8 +156,8 @@
             Debug.Assert(width > 0);
             // The ZX Spectrum ULA, Chris Smith
             // Chapter 12 (Generating the Display), Border Generation
-            System.Diagnostics.Debug.Assert(x % 8 == 0);
-            System.Diagnostics.Debug.Assert(width % 8 == 0);
+            Debug.Assert(x % 8 == 0);
+            Debug.Assert(width % 8 == 0);
             var chunks = width / 8;
             var offset = y * this.RasterWidth + x;
             for (int chunk = 0; chunk < chunks; ++chunk)
@@ -192,7 +173,7 @@
 
         public void RenderLine()
         {
-            System.Diagnostics.Debug.Assert(this.C == 0);
+            Debug.Assert(this.C == 0);
 
             if (this.V < VerticalRetraceLines)
                 this.ProcessVerticalSync();
@@ -203,16 +184,16 @@
             else if (this.V < (VerticalRetraceLines + this.TopRasterBorder + ActiveRasterHeight + this.BottomRasterBorder))
                 this.ProcessBorder(this.V - VerticalRetraceLines);
 
-            System.Diagnostics.Debug.Assert(this.C == TotalHorizontalClocks);
+            Debug.Assert(this.C == TotalHorizontalClocks);
             this.IncrementV();
         }
 
         public void RenderLines()
         {
-            System.Diagnostics.Debug.Assert(this.V == 0);
+            Debug.Assert(this.V == 0);
             for (int i = 0; i < this.TotalHeight; ++i)
                 this.RenderLine();
-            System.Diagnostics.Debug.Assert(this.V == TotalHeight);
+            Debug.Assert(this.V == this.TotalHeight);
             this.ResetV();
             this._buzzer.EndFrame();
         }
@@ -252,7 +233,6 @@
             this._pixels = new ColorT[this.RasterWidth * this.RasterHeight];
 
             this.InitialiseKeyboardMapping();
-            this.InitialiseVRAMAddresses();
 
             this.ResetF();
             this.ResetV();
@@ -265,8 +245,7 @@
         {
             this._contention = 0;
             var contendedBase = (VerticalRetraceLines + this.TopRasterBorder) * this.TotalHorizontalClocks / 2 - 1;
-            Debug.Assert(contendedBase == 14335);   // PAL
-            //Debug.Assert(contendedBase == 8959);    // NTSC
+            Debug.Assert(contendedBase == (this._timings is NtscTimings ? 8959 : 14335));
             var possiblyContended = (this._interruptCycles > contendedBase) && this.ContendedAddress;
             if (possiblyContended)
             {
@@ -386,25 +365,45 @@
 
         private void Flash() => this._flashing = !this._flashing;
 
+        private static ushort AttributeOffset(int line)
+        {
+            Debug.Assert(line < 192);
+            var row = line >> 3;
+            Debug.Assert(row < 24);
+            return (ushort)(AttributeAddress + (row << 5));
+        }
+
+        private static ushort PixelOffset(int line)
+        {
+            Debug.Assert(line < 192);
+            var scan = line & (int)Mask.Three;
+            Debug.Assert(scan < 8);
+            line >>= 3;
+            var row = line & (int)Mask.Three;
+            Debug.Assert(row < 8);
+            line >>= 3;
+            var chunk = line & (int)Mask.Two;
+            Debug.Assert(chunk < 3);
+            return (ushort)(chunk * 0x0800 + row * 0x20 + scan * 0x100);
+        }
+
         private void RenderVRAM(int y)
         {
-            System.Diagnostics.Debug.Assert(y >= 0);
-            System.Diagnostics.Debug.Assert(y < (TopRasterBorder + RasterHeight));
+            // Check that incoming row is not in either the top or bottom border area
+            // and is within the active raster height
+            Debug.Assert(y >= 0);
+            Debug.Assert(y < (RasterHeight - this.BottomRasterBorder));
+            Debug.Assert(y >= TopRasterBorder);
 
-            // Position in VRAM
-            System.Diagnostics.Debug.Assert(y >= TopRasterBorder);
             var indexY = y - TopRasterBorder;
-
             Debug.Assert(indexY >= 0);
             Debug.Assert(indexY < ActiveRasterHeight);
-            var bitmapAddressY = this._scanLineAddresses[indexY];
-            var attributeAddressY = this._attributeAddresses[indexY];
+
+            var bitmapAddress = PixelOffset(indexY);        // Starting pixel row position in VRAM
+            var attributeAddress = AttributeOffset(indexY); // Starting attribute row position in VRAM
 
             // Position in pixel render 
             var pixelBase = LeftRasterBorder + (y  * RasterWidth);
-
-            var bitmapAddress = bitmapAddressY;
-            var attributeAddress = attributeAddressY;
 
             for (var currentByte = 0; currentByte < BytesPerLine; ++currentByte)
             {

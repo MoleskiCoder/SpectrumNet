@@ -3,6 +3,7 @@
     using EightBit;
     using System;
     using System.Diagnostics;
+    using System.Runtime.CompilerServices;
 
     internal abstract class AbstractUla<ColorT, KeyT> : EightBit.ClockedChip
     {
@@ -249,10 +250,11 @@
         private void CalculateContention()
         {
             this._contention = 0;
+            if (!this.ContendedAddress)
+                return;
             var contendedBase = (ITimings.VerticalRetraceLines + this._timings.TopRasterBorder) * this._timings.TotalHorizontalClocks / 2 - 1;
             Debug.Assert(contendedBase == (this._timings is NtscTimings ? 8959 : 14335));
-            var possiblyContended = (this._interruptCycles > contendedBase) && this.ContendedAddress;
-            if (possiblyContended)
+            if (this._interruptCycles > contendedBase)
             {
                 var contendedCycles = ITimings.ActiveRasterWidth / 2;
                 var uncontendedCycles = (ITimings.HorizontalRetraceClocks + this._timings.LeftRasterBorder + this._timings.RightRasterBorder) / 2;
@@ -421,11 +423,14 @@
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetClockedPixel(int offset, ColorT colour)
         {
             this.SetPixel(offset, colour);
             this.Tick();
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
         private void SetPixel(int offset, ColorT colour)
         {

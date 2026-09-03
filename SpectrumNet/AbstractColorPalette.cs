@@ -44,11 +44,13 @@
             this.LoadColour(Index.White, 0xd7, 0xd7, 0xd7);
         }
 
-        protected void LoadColour(Index idx, byte red, byte green, byte blue)
+        protected void LoadColour(Index idx, byte red, byte green, byte blue) => this.LoadColour((int)idx, red, green, blue);
+
+        protected void LoadColour(int idx, byte red, byte green, byte blue)
         {
-            this.LoadExactColour((int)idx, red, green, blue);
+            this.LoadExactColour(idx, red, green, blue);
             this.LoadExactColour(
-                (int)idx + 8,
+                idx + 8,
                 (byte)(red > 0 ? red + Bright : 0),
                 (byte)(green > 0 ? green + Bright : 0),
                 (byte)(blue > 0 ? blue + Bright : 0));

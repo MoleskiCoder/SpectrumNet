@@ -8,14 +8,11 @@
         // 48K ROM LD-BYTES entry point, trapped for instant tape loading
         private const ushort LdBytesAddress = 0x0556;
 
-        private readonly Configuration _configuration;
-
         private TapeFile? _tape;
 
-        public Board(Configuration configuration, ITimings timings)
-        : base(timings, configuration.DebugMode)
+        public Board(Configuration configuration)
+        : base(configuration)
         {
-            this._configuration = configuration;
             this.Sound = new Buzzer(this.Timings);
             this.ULA = new Ula(this);
         }
@@ -26,7 +23,8 @@
 
         public override void Initialize()
         {
-            var romDirectory = this._configuration.RomDirectory;
+            base.Initialize();
+            var romDirectory = this.Settings.RomDirectory;
             this.Plug(romDirectory + "\\48.rom");	// ZX Spectrum Basic
             this.ULA.Proceed += this.ULA_Proceed;
         }

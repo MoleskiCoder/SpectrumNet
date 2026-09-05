@@ -17,20 +17,22 @@
 
         public int NumberOfExpansions => this._expansions.Count;
 
-        protected AbstractBoard(ITimings timings, bool disassembling)
+        protected AbstractBoard(Configuration configuration)
         {
-            this.Timings = timings;
+            this.Settings = configuration;
 
             this.CPU = new Z80.Z80(this, this.Ports);
             this._disassembler = new Z80.Disassembler(this);
-            this._disassembling = disassembling;
+            this._disassembling = configuration.DebugMode;
 
             this._romMapping = new(this.ROM, 0x0000, 0xffff, EightBit.AccessLevel.ReadOnly);
             this._vramMapping = new(this.VRAM, 0x4000, 0xffff, EightBit.AccessLevel.ReadWrite);
             this._wramMapping = new(this.WRAM, 0x8000, 0xffff, EightBit.AccessLevel.ReadWrite);
         }
 
-        public ITimings Timings { get; }
+        protected Configuration Settings { get; }
+
+        public ITimings Timings => this.Settings.Timings;
 
         public Z80.Z80 CPU { get; }
 
@@ -44,7 +46,6 @@
 
         public override void Initialize()
         {
-            this.CPU.ExecutedInstruction += this.CPU_ExecutedInstruction;
             if (this._disassembling)
             {
                 this.CPU.ExecutingInstruction += this.CPU_ExecutingInstruction;
@@ -55,7 +56,6 @@
         {
             base.RaisePOWER();
             this.CPU.RaisePOWER();
-            this.CPU.LowerRESET();
             this.CPU.RaiseINT();
             this.CPU.RaiseNMI();
 
@@ -63,6 +63,8 @@
             {
                 expansion.RaisePOWER();
             }
+
+            this.RunPowerOnReset();
         }
 
         public override void LowerPOWER()
@@ -74,6 +76,18 @@
 
             this.CPU.LowerPOWER();
             base.LowerPOWER();
+        }
+
+        private void RunPowerOnReset()
+        {
+            this.CPU.RaiseRESET();
+            this.CPU.LowerRESET();
+            this._allowed = this.Timings.PowerOnResetCycles;
+            while (this._allowed > 0)
+            {
+                this.RunCycle();
+            }
+            this.CPU.RaiseRESET();
         }
 
         public void Plug(string path) => this.ROM.Load(path);
@@ -96,8 +110,6 @@
 
             return this._wramMapping;
         }
-
-        private void CPU_ExecutedInstruction(object? sender, EventArgs e) => this.CPU.RaiseRESET();
 
         private void CPU_ExecutingInstruction(object? sender, System.EventArgs e)
         {

@@ -10,7 +10,7 @@ internal sealed partial class Game : SDL.IMainCallbacks<Game>
 
     public Game()
     {
-        this._computer = new(this._configuration, this._configuration.Timings);
+        this._computer = new(this._configuration);
     }
 
     private void LoadROM()

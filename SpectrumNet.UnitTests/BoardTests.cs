@@ -1,7 +1,6 @@
 ﻿namespace SpectrumNet.UnitTests
 {
     using EightBit;
-    using Microsoft.Testing.Platform.Configurations;
     using System.Diagnostics;
 
     [TestClass]

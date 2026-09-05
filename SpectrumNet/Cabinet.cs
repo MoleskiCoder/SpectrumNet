@@ -27,7 +27,7 @@
 
         public override int DisplayScale => 2;
 
-        public override int RasterWidth => this.Settings.Timings.RasterWidth;
+        public override int RasterWidth => ITimings.RasterWidth;
 
         public override int RasterHeight => this.Settings.Timings.RasterHeight;
 

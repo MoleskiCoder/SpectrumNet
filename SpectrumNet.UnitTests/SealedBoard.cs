@@ -5,10 +5,10 @@
         private readonly SealedUla _ula;
         private readonly SealedBuzzer _sound;
 
-        public SealedBoard(ITimings timings)
-        : base(timings, false)
+        public SealedBoard(Configuration configuration)
+        : base(configuration)
         {
-            this._sound = new SealedBuzzer(timings, 44100);
+            this._sound = new SealedBuzzer(configuration.Timings, 44100);
             this._ula = new SealedUla(this);
         }
 
@@ -19,6 +19,8 @@
         public override void Initialize()
         {
             base.Initialize();
+            var romDirectory = this.Settings.RomDirectory;
+            this.Plug(romDirectory + "\\48.rom");	// ZX Spectrum Basic
             this.ULA.Proceed += this.ULA_Proceed;
         }
 

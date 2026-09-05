@@ -8,8 +8,12 @@
         public const int HorizontalRetraceClocks = 96;
         public const int VerticalRetraceLines = 8;
 
-        public abstract int LeftRasterBorder { get; }
-        public abstract int RightRasterBorder { get; }
+        public const int LeftRasterBorder = 32;
+        public const int RightRasterBorder = 64;
+
+        public const int RasterWidth = LeftRasterBorder + ActiveRasterWidth + RightRasterBorder;
+
+        public const int TotalHorizontalClocks = HorizontalRetraceClocks + RasterWidth;
 
         public abstract int TopRasterBorder { get; }
         public abstract int BottomRasterBorder { get; }
@@ -21,12 +25,10 @@
 
         public int PowerOnResetCycles => 1; // (int)CpuClockRate / 10;
 
-        public int RasterWidth => this.LeftRasterBorder + ActiveRasterWidth + this.RightRasterBorder;
         public int RasterHeight => this.TopRasterBorder + ActiveRasterHeight + this.BottomRasterBorder;
         public int TotalHeight => VerticalRetraceLines + this.RasterHeight;
 
-        public int TotalHorizontalClocks => HorizontalRetraceClocks + this.RasterWidth;
-        public int TotalClocks => this.TotalHorizontalClocks * this.TotalHeight;
+        public int TotalClocks => TotalHorizontalClocks * this.TotalHeight;
 
         public float FramesPerSecond => this.UlaClockRate / this.TotalClocks;
     }

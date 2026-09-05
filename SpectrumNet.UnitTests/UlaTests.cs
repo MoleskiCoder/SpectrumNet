@@ -1,6 +1,5 @@
 ﻿namespace SpectrumNet.UnitTests
 {
-
     [TestClass]
     public sealed class UlaTests
     {
@@ -16,14 +15,15 @@
 
         public UlaTests()
         {
-            var timings = new PalTimings();
-            //var timings = new NtscTimings();
-            this._board = new SealedBoard(timings);
+            var configuration = new Configuration();
+            this._board = new SealedBoard(configuration);
         }
 
         [TestInitialize]
         public void Setup()
         {
+            Directory.SetCurrentDirectory(@"c:\github\spectrum");
+            this._board.Initialize();
             this._board.RaisePOWER();
         }
 
@@ -55,7 +55,7 @@
             this.ULA.RenderLines();
 
             Assert.AreEqual(AbstractUla<uint, byte>.InterruptDuration, this._interruptTicks);
-            Assert.AreEqual(this._board.Timings.TotalHorizontalClocks * this._board.Timings.TotalHeight, this._frameTicks);
+            Assert.AreEqual(ITimings.TotalHorizontalClocks * this._board.Timings.TotalHeight, this._frameTicks);
             Assert.AreEqual(this._board.Timings.UlaClockRate, this._board.Timings.FramesPerSecond * this._frameTicks);
             Assert.AreEqual(1, this._interruptCount);
             Assert.AreEqual(startingF + 1, this.ULA.F);
@@ -71,7 +71,7 @@
             this.ULA.Ticked += this.ULA_Ticked;
             this._frameTicks = 0;
             this.ULA.RenderLine();
-            Assert.AreEqual(this._board.Timings.TotalHorizontalClocks, this._frameTicks);
+            Assert.AreEqual(ITimings.TotalHorizontalClocks, this._frameTicks);
             this.ULA.Ticked -= this.ULA_Ticked;
         }
 

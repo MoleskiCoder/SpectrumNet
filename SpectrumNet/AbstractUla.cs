@@ -49,7 +49,7 @@
 
         public ColorT[]? Pixels => this._pixels;
 
-        public int FrameUlaCycles => this._timings.TotalHorizontalClocks * this.V + this.C;
+        public int FrameUlaCycles => ITimings.TotalHorizontalClocks * this.V + this.C;
         public int FrameCpuCycles => this.FrameUlaCycles / 2;
 
         public bool Flashing => this._flashing;
@@ -140,21 +140,21 @@
 
             this.Tick(InterruptDuration);
             this._cpu.RaiseINT();
-            this.Tick(this._timings.LeftRasterBorder - InterruptDuration + ITimings.ActiveRasterWidth + this._timings.RightRasterBorder + ITimings.HorizontalRetraceClocks);
+            this.Tick(ITimings.LeftRasterBorder - InterruptDuration + ITimings.ActiveRasterWidth + ITimings.RightRasterBorder + ITimings.HorizontalRetraceClocks);
         }
 
         private void ProcessBorder(int y)
         {
             Debug.Assert(y >= 0);
-            this.RenderRasterBorder(this._timings.LeftRasterBorder, y, ITimings.ActiveRasterWidth);
+            this.RenderLeftRasterBorder(y);
+            this.RenderRasterBorder(ITimings.LeftRasterBorder, y, ITimings.ActiveRasterWidth);
             this.RenderRightRasterBorder(y);
             this.Tick(ITimings.HorizontalRetraceClocks);
-            this.RenderLeftRasterBorder(y);
         }
 
-        private void RenderLeftRasterBorder(int y) => this.RenderRasterBorder(0, y, this._timings.LeftRasterBorder);
+        private void RenderLeftRasterBorder(int y) => this.RenderRasterBorder(0, y, ITimings.LeftRasterBorder);
 
-        private void RenderRightRasterBorder(int y) => this.RenderRasterBorder(this._timings.LeftRasterBorder + ITimings.ActiveRasterWidth, y, this._timings.RightRasterBorder);
+        private void RenderRightRasterBorder(int y) => this.RenderRasterBorder(ITimings.LeftRasterBorder + ITimings.ActiveRasterWidth, y, ITimings.RightRasterBorder);
 
         private void RenderRasterBorder(int x, int y, int width)
         {
@@ -166,7 +166,7 @@
             Debug.Assert(x % PixelsPerCharacter == 0);
             Debug.Assert(width % PixelsPerCharacter == 0);
             var chunks = width / PixelsPerCharacter;
-            var offset = y * this._timings.RasterWidth + x;
+            var offset = y * ITimings.RasterWidth + x;
             for (int chunk = 0; chunk < chunks; ++chunk)
             {
                 var colour = this._borderColour;
@@ -191,7 +191,7 @@
             else if (this.V < (ITimings.VerticalRetraceLines + this._timings.TopRasterBorder + ITimings.ActiveRasterHeight + this._timings.BottomRasterBorder))
                 this.ProcessBorder(this.V - ITimings.VerticalRetraceLines);
 
-            Debug.Assert(this.C == this._timings.TotalHorizontalClocks);
+            Debug.Assert(this.C == ITimings.TotalHorizontalClocks);
             this.IncrementV();
         }
 
@@ -238,7 +238,7 @@
         public override void RaisePOWER()
         {
             base.RaisePOWER();
-            this._pixels = new ColorT[this._timings.RasterWidth * this._timings.RasterHeight];
+            this._pixels = new ColorT[ITimings.RasterWidth * this._timings.RasterHeight];
             this.InitialiseKeyboardMapping();
             this.ResetF();
             this.ResetV();
@@ -252,12 +252,12 @@
             this._contention = 0;
             if (!this.ContendedAddress)
                 return;
-            var contendedBase = (ITimings.VerticalRetraceLines + this._timings.TopRasterBorder) * this._timings.TotalHorizontalClocks / 2 - 1;
+            var contendedBase = (ITimings.VerticalRetraceLines + this._timings.TopRasterBorder) * ITimings.TotalHorizontalClocks / 2 - 1;
             Debug.Assert(contendedBase == (this._timings is NtscTimings ? 8959 : 14335));
             if (this._interruptCycles > contendedBase)
             {
                 var contendedCycles = ITimings.ActiveRasterWidth / 2;
-                var uncontendedCycles = (ITimings.HorizontalRetraceClocks + this._timings.LeftRasterBorder + this._timings.RightRasterBorder) / 2;
+                var uncontendedCycles = (ITimings.HorizontalRetraceClocks + ITimings.LeftRasterBorder + ITimings.RightRasterBorder) / 2;
                 var totalNumberOfCyclesPerLine = contendedCycles + uncontendedCycles;
                 var currentCycle = this._interruptCycles - contendedBase;
                 var scanLine = currentCycle / totalNumberOfCyclesPerLine;
@@ -399,7 +399,7 @@
             var attributeAddress = AttributeOffset(indexY); // Starting attribute row position in VRAM
 
             // Position in pixel render 
-            var pixelBase = this._timings.LeftRasterBorder + (y  * this._timings.RasterWidth);
+            var pixelBase = ITimings.LeftRasterBorder + (y * ITimings.RasterWidth);
 
             for (var currentCharacter = 0; currentCharacter < CharactersPerLine; ++currentCharacter)
             {

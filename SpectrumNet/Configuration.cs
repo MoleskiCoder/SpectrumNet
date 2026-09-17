@@ -1,7 +1,5 @@
 ﻿namespace SpectrumNet
 {
-    using SDL3;
-
     internal sealed class Configuration
     {
         public ITimings Timings { get; } = new PalTimings();

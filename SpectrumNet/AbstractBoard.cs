@@ -82,11 +82,8 @@
         {
             this.CPU.RaiseRESET();
             this.CPU.LowerRESET();
-            this._allowed = this.Timings.PowerOnResetCycles;
-            while (this._allowed > 0)
-            {
-                this.RunCycle();
-            }
+            this._allowed = this.Timings.PowerOnResetCycles - 1;
+            this.RunCycle();
             this.CPU.RaiseRESET();
         }
 

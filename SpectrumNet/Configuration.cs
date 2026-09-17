@@ -9,9 +9,9 @@
 
         public bool DebugMode { get; set; }
 
-        //public SDL.LogPriority LoggingLevel { get; set; } = SDL.LogPriority.Debug;
-        public SDL.LogPriority LoggingLevel { get; set; } = SDL.LogPriority.Info;
-        //public SDL.LogPriority LoggingLevel { get; set; } = SDL.LogPriority.Warn;
+        //public EightBit.ILogger.LogLevel LoggingLevel { get; set; } = EightBit.ILogger.LogLevel.Debugging;
+        public EightBit.ILogger.LogLevel LoggingLevel { get; set; } = EightBit.ILogger.LogLevel.Information;
+        //public EightBit.ILogger.LogLevel LoggingLevel { get; set; } = EightBit.ILogger.LogLevel.Warning;
 
         public bool ProfileMode { get; set; }
 

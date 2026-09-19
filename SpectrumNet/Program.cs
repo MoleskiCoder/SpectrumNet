@@ -8,6 +8,8 @@ internal sealed partial class Game : SDL.IMainCallbacks<Game>
 
     private readonly Cabinet _computer;
 
+    private EightBit.ILogger Logger => this._computer.Logger;
+
     public Game()
     {
         this._computer = new(this._configuration);
@@ -78,26 +80,26 @@ internal sealed partial class Game : SDL.IMainCallbacks<Game>
         appState.LoadROM();
         appState.LoadProgram();
 
-        SDL.LogInfo(SDL.LogCategory.Application, "Completed application initialisation");
+        appState.Logger.Inform("Completed application initialisation");
 
         return SDL.AppResult.Continue;
     }
 
     public void AppQuit(SDL.AppResult result)
     {
-        SDL.LogInfo(SDL.LogCategory.Application, "Terminating application");
+        this.Logger.Inform("Terminating application");
         this._computer.LowerPOWER();
     }
 
     public SDL.AppResult AppIterate()
     {
-        SDL.LogDebug(SDL.LogCategory.Application, "Executing application frame");
+        this.Logger.Debug("Executing application frame");
         return this._computer.RunFrame();
     }
 
     public SDL.AppResult AppEvent(ref SDL.Event @event)
     {
-        SDL.LogDebug(SDL.LogCategory.Application, "Handling application event");
+        this.Logger.Debug("Handling application event");
         return this._computer.HandleEvent(@event);
     }
 }

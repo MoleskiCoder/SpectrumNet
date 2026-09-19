@@ -26,6 +26,7 @@
             base.Initialize();
             var romDirectory = this.Settings.RomDirectory;
             this.Plug(romDirectory + "\\48.rom");	// ZX Spectrum Basic
+            this._labels.Parse($"{romDirectory}\\48.sym");
             this.ULA.Proceed += this.ULA_Proceed;
         }
 

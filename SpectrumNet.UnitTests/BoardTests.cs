@@ -7,6 +7,7 @@
     public sealed class BoardTests
     {
         private readonly Configuration _configuration;
+        private readonly EightBit.ILogger _logger;
         private SealedBoard? _board;
 
         private int _instructionsUnderReset;
@@ -16,12 +17,13 @@
         {
             Directory.SetCurrentDirectory(@"c:\github\spectrum");
             this._configuration = new Configuration();
+            this._logger = new ConsoleLogger("Board tests");
         }
 
         [TestInitialize]
         public void Setup()
         {
-            this._board = new SealedBoard(this._configuration);
+            this._board = new SealedBoard(this._logger, this._configuration);
             this._board.CPU.ExecutingInstruction += this.CPU_ExecutingInstruction;
             this._board.CPU.ExecutedInstruction += this.CPU_ExecutedInstruction;
             this._instructionsUnderReset = 0;

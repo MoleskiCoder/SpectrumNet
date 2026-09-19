@@ -10,8 +10,8 @@
 
         private TapeFile? _tape;
 
-        public Board(Configuration configuration)
-        : base(configuration)
+        public Board(EightBit.ILogger logger, Configuration configuration)
+        : base(logger, configuration)
         {
             this.Sound = new Buzzer(this.Timings);
             this.ULA = new Ula(this);

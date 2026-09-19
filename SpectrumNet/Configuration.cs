@@ -5,8 +5,6 @@
         public ITimings Timings { get; } = new PalTimings();
         //public ITimings Timings { get; } = new NtscTimings();
 
-        public bool DebugMode { get; set; }
-
         //public EightBit.ILogger.LogLevel LoggingLevel { get; set; } = EightBit.ILogger.LogLevel.Debugging;
         public EightBit.ILogger.LogLevel LoggingLevel { get; set; } = EightBit.ILogger.LogLevel.Information;
         //public EightBit.ILogger.LogLevel LoggingLevel { get; set; } = EightBit.ILogger.LogLevel.Warning;

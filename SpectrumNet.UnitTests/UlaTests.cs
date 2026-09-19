@@ -3,6 +3,7 @@
     [TestClass]
     public sealed class UlaTests
     {
+        private readonly EightBit.ILogger _logger;
         private readonly SealedBoard _board;
         private SealedUla ULA => this._board.ULA as SealedUla ?? throw new InvalidOperationException("ULA is not a SealedUla.");
         private Z80.Z80 CPU => this._board.CPU;
@@ -16,7 +17,8 @@
         public UlaTests()
         {
             var configuration = new Configuration();
-            this._board = new SealedBoard(configuration);
+            this._logger = new EightBit.ConsoleLogger("Ula tests");
+            this._board = new SealedBoard(this._logger, configuration);
         }
 
         [TestInitialize]

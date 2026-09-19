@@ -5,8 +5,8 @@
         private readonly SealedUla _ula;
         private readonly SealedBuzzer _sound;
 
-        public SealedBoard(Configuration configuration)
-        : base(configuration)
+        public SealedBoard(EightBit.ILogger logger, Configuration configuration)
+        : base(logger, configuration)
         {
             this._sound = new SealedBuzzer(configuration.Timings, 44100);
             this._ula = new SealedUla(this);

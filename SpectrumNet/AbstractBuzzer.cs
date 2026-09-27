@@ -26,18 +26,18 @@
             this._audioFrequency = audioFrequency;
             this._lastLevel = this.LowLevel;
             this._buffer = new float[this.SamplesPerFrame];
+            this.RaisedPOWER += this.AbstractBuzzer_RaisedPOWER;
+            this.LoweringPOWER += this.AbstractBuzzer_LoweringPOWER;
         }
 
-        public override void RaisePOWER()
+        private void AbstractBuzzer_RaisedPOWER(object? sender, EventArgs e)
         {
-            base.RaisePOWER();
             this.Initialise();
         }
 
-        public override void LowerPOWER()
+        private void AbstractBuzzer_LoweringPOWER(object? sender, EventArgs e)
         {
             this.Terminate();
-            base.LowerPOWER();
         }
 
         public virtual void Initialise() => this.Start();

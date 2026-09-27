@@ -54,11 +54,12 @@
             {
                 this.CPU.ExecutingInstruction += this.CPU_ExecutingInstruction;
             }
+            this.RaisedPOWER += this.AbstractBoard_RaisedPOWER;
+            this.LoweringPOWER += this.AbstractBoard_LoweringPOWER;
         }
 
-        public override void RaisePOWER()
+        private void AbstractBoard_RaisedPOWER(object? sender, EventArgs e)
         {
-            base.RaisePOWER();
             this.CPU.RaisePOWER();
             this.CPU.RaiseINT();
             this.CPU.RaiseNMI();
@@ -71,7 +72,7 @@
             this.RunPowerOnReset();
         }
 
-        public override void LowerPOWER()
+        private void AbstractBoard_LoweringPOWER(object? sender, EventArgs e)
         {
             foreach (var expansion in this._expansions)
             {
@@ -79,7 +80,6 @@
             }
 
             this.CPU.LowerPOWER();
-            base.LowerPOWER();
         }
 
         private void RunPowerOnReset()

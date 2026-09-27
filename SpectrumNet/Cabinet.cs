@@ -38,6 +38,8 @@
         {
             this.Motherboard = new Board(this.Logger, configuration);
             this.Settings = configuration;
+            this.RaisedPOWER += this.Cabinet_RaisedPOWER;
+            this.LoweringPOWER += this.Cabinet_LoweringPOWER;
         }
 
         protected override uint[] Pixels()
@@ -48,16 +50,14 @@
             return this.Motherboard.ULA.Pixels;
         }
 
-        public override void RaisePOWER()
+        private void Cabinet_RaisedPOWER(object? sender, EventArgs e)
         {
-            base.RaisePOWER();
             this.Motherboard.RaisePOWER();
         }
 
-        public override void LowerPOWER()
+        private void Cabinet_LoweringPOWER(object? sender, EventArgs e)
         {
-            Motherboard.LowerPOWER();
-            base.LowerPOWER();
+            this.Motherboard.LowerPOWER();
         }
 
         public override void Initialise()

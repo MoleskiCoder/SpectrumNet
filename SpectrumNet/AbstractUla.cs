@@ -78,6 +78,19 @@
 
             this._ports.ReadingPort += this.Ports_ReadingPort;
             this._ports.WrittenPort += this.Ports_WrittenPort;
+
+            this.RaisedPOWER += this.AbstractUla_RaisedPOWER;
+        }
+
+        private void AbstractUla_RaisedPOWER(object? sender, EventArgs e)
+        {
+            this._pixels = new ColorT[ITimings.RasterWidth * this._timings.RasterHeight];
+            this.InitialiseKeyboardMapping();
+            this.ResetF();
+            this.ResetV();
+            this.C = 0;
+            this.SetBorder((int)AbstractColorPalette<ColorT>.Index.Black);
+            this._flashing = false;
         }
 
         private void Ula_Ticked(object? sender, EventArgs e)
@@ -234,18 +247,6 @@
         public void PokeKey(KeyT raw) => this._keyboardRaw.Add(raw);
 
         public void PullKey(KeyT raw) => this._keyboardRaw.Remove(raw);
-
-        public override void RaisePOWER()
-        {
-            base.RaisePOWER();
-            this._pixels = new ColorT[ITimings.RasterWidth * this._timings.RasterHeight];
-            this.InitialiseKeyboardMapping();
-            this.ResetF();
-            this.ResetV();
-            this.C = 0;
-            this.SetBorder((int)AbstractColorPalette<ColorT>.Index.Black);
-            this._flashing = false;
-        }
 
         private void CalculateContention()
         {

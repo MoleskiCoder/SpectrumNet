@@ -28,20 +28,20 @@
             this.Plug(romDirectory + "\\48.rom");	// ZX Spectrum Basic
             this._labels.Parse($"{romDirectory}\\48.sym");
             this.ULA.Proceed += this.ULA_Proceed;
+            this.RaisedPOWER += this.Board_RaisedPOWER;
+            this.LoweringPOWER += this.Board_LoweringPOWER;
         }
 
-        public override void RaisePOWER()
+        private void Board_RaisedPOWER(object? sender, EventArgs e)
         {
-            base.RaisePOWER();
             this.Sound.RaisePOWER();
             this.ULA.RaisePOWER();
         }
 
-        public override void LowerPOWER()
+        private void Board_LoweringPOWER(object? sender, EventArgs e)
         {
             this.ULA.LowerPOWER();
             this.Sound.LowerPOWER();
-            base.LowerPOWER();
         }
 
         public void LoadSna(string path)
